@@ -1,0 +1,6 @@
+/* App.css — Minimal app-level overrides */
+
+/* Ensure root element fills viewport */
+#root {
+  min-height: 100vh;
+}
