@@ -1,17 +1,17 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../../context/AuthContext';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Select, MenuItem, Snackbar, Alert, CircularProgress, Switch, TablePagination, Checkbox, Button, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Avatar } from '@mui/material';
-import { Trash2, Eye, X } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Select, MenuItem, CircularProgress, Switch, TablePagination, Checkbox, Button, Dialog, DialogTitle, DialogContent, IconButton, Avatar, Alert } from '@mui/material';
+import { Trash2, Eye, X, Search } from 'lucide-react';
+import { fetchSuperAdminData, updateUserRole, toggleUserStatus, batchDeleteUsers } from '../../store/slices/adminSlice';
 import api from '../../api';
-import { Search } from 'lucide-react';
 
 const SuperAdminPanel = () => {
   const { user } = useContext(AuthContext);
+  const dispatch = useDispatch();
+  const { users: rawUsers, roles: rawRoles, loading, error } = useSelector((state) => state.admin);
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -21,61 +21,31 @@ const SuperAdminPanel = () => {
   const filteredUsers = users.filter(u =>
     u.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+  
+  useEffect(() => {
+    dispatch(fetchSuperAdminData());
+  }, [dispatch]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [usersRes, rolesRes] = await Promise.all([
-          api.get('/super-admin/users'),
-          api.get('/super-admin/roles')
-        ]);
-        setUsers((usersRes.data.users || []).filter(u => 
-          u.id !== user.id && 
-          u.Role?.slug !== 'superadmin' && 
-          u.Role?.slug !== 'admin'
-        ));
-        setRoles((rolesRes.data.roles || []).filter(r => 
-          r.slug !== 'superadmin' && 
-          r.slug !== 'superAdmin' && 
-          r.slug !== 'admin' && 
-          r.name !== 'Admin'
-        ));
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch data');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [user.id]);
+    setUsers((rawUsers || []).filter(u => 
+      u.id !== user.id && 
+      u.Role?.slug !== 'superadmin' && 
+      u.Role?.slug !== 'admin'
+    ));
+    setRoles((rawRoles || []).filter(r => 
+      r.slug !== 'superadmin' && 
+      r.slug !== 'superAdmin' && 
+      r.slug !== 'admin' && 
+      r.name !== 'Admin'
+    ));
+  }, [rawUsers, rawRoles, user.id]);
 
-  const handleRoleChange = async (userId, newRoleId) => {
-    try {
-      await api.put(`/super-admin/users/${userId}/role`, { role_id: newRoleId });
-      setSuccessMsg('User role updated successfully');
-      setUsers(users.map(u => u.id === userId ? { ...u, Role: roles.find(r => r.id === newRoleId) } : u));
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update user role');
-    }
+  const handleRoleChange = (userId, newRoleId) => {
+    dispatch(updateUserRole({ userId, newRoleId }));
   };
 
-  const handleStatusChange = async (userId, isActive) => {
-    try {
-      await api.put(`/super-admin/users/${userId}/status`, { is_active: isActive });
-      setSuccessMsg(`User status updated to ${isActive ? 'Active' : 'Inactive'}`);
-      setUsers(users.map(u => u.id === userId ? { ...u, is_active: isActive } : u));
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update user status');
-    }
+  const handleStatusChange = (userId, isActive) => {
+    dispatch(toggleUserStatus({ userId, isActive, isAdminPanel: false }));
   };
 
   const handleSelectAllClick = (event) => {
@@ -107,16 +77,10 @@ const SuperAdminPanel = () => {
     setSelectedUsers(newSelected);
   };
 
-  const handleBatchDelete = async () => {
+  const handleBatchDelete = () => {
     if (!window.confirm('Are you sure you want to delete selected users?')) return;
-    try {
-      await api.delete('/super-admin/users/batch', { data: { userIds: selectedUsers } });
-      setSuccessMsg('Selected users deleted successfully');
-      setUsers(users.filter(u => !selectedUsers.includes(u.id)));
-      setSelectedUsers([]);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete users');
-    }
+    dispatch(batchDeleteUsers(selectedUsers));
+    setSelectedUsers([]);
   };
 
   if (loading) return <div className="loading-container"><CircularProgress /></div>;
@@ -235,16 +199,13 @@ const SuperAdminPanel = () => {
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={users.length}
+          count={filteredUsers.length}
           rowsPerPage={rowsPerPage}
           page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
+          onPageChange={(e, p) => setPage(p)}
+          onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
         />
       </div>
-      <Snackbar open={!!successMsg} autoHideDuration={6000} onClose={() => setSuccessMsg('')}>
-        <Alert onClose={() => setSuccessMsg('')} severity="success">{successMsg}</Alert>
-      </Snackbar>
 
       {/* View User Details Modal */}
       <Dialog open={!!viewUser} onClose={() => setViewUser(null)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '16px', overflow: 'hidden' } }}>

@@ -10,6 +10,7 @@ import ChangePassword from './pages/ChangePassword';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import ProfileInfo from './pages/ProfileInfo';
+import ToastNotification from './components/common/ToastNotification';
 import {
   LOGIN_URL,
   ROLE_SELECTION_URL,
@@ -63,6 +64,7 @@ function App() {
   return (
     <AuthProvider>
       <AppRoutes />
+      <ToastNotification />
     </AuthProvider>
   );
 }

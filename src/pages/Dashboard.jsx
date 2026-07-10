@@ -12,38 +12,8 @@ import { LOGIN_URL, DASHBOARD_URL, PROFILE_URL, CHANGE_PASSWORD_URL } from '../r
 
 import SuperAdminPanel from '../components/dashboard/SuperAdminPanel';
 import AdminPanel from '../components/dashboard/AdminPanel';
-
-// --- Artist Panel ---
-const ArtistPanel = () => {
-  const [stats, setStats] = useState(null);
-  
-  useEffect(() => {
-    api.get('/artist/stats')
-       .then(res => setStats(res.data))
-       .catch(err => console.error(err));
-  }, []);
-
-  return (
-    <div>
-      <h2 className="panel-title">Artist Studio</h2>
-      <div className="panel-stat-grid">
-        <div className="panel-stat-card">
-          <div className="panel-stat-label">Total Tracks</div>
-          <div className="panel-stat-value">{stats?.totalTracks || 0}</div>
-        </div>
-        <div className="panel-stat-card">
-          <div className="panel-stat-label">Total Plays</div>
-          <div className="panel-stat-value">{stats?.totalPlays || 0}</div>
-        </div>
-      </div>
-      <div className="panel-card">
-        <button className="btn btn-primary" style={{ maxWidth: '240px' }} onClick={() => alert('Upload functionality coming soon!')}>
-          <Plus size={18} /> Upload New Track
-        </button>
-      </div>
-    </div>
-  );
-};
+import ArtistPanel from '../components/dashboard/ArtistPanel';
+import NotificationBell from '../components/common/NotificationBell';
 
 // --- Listener Panel ---
 const ListenerPanel = () => {
@@ -730,10 +700,9 @@ const Dashboard = () => {
             <IconButton onClick={() => setDarkMode(!darkMode)} sx={{ color: 'var(--text-secondary)' }}>
               {darkMode ? <Sun size={20} /> : <Moon size={20} />}
             </IconButton>
-            <button className="top-bar-btn">
-              <Bell size={18} />
-              <span className="notification-dot" />
-            </button>
+            {(user.role?.toLowerCase() === 'admin' || user.role?.toLowerCase() === 'superadmin') && (
+              <NotificationBell />
+            )}
             <div className="profile-dropdown-wrapper">
               <div className="top-bar-user" onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}>
                 <img

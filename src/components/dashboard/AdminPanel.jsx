@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Snackbar, Alert, CircularProgress, Switch, TablePagination, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button, Avatar } from '@mui/material';
+import { useDispatch, useSelector } from 'react-redux';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Switch, TablePagination, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button, Avatar, Alert } from '@mui/material';
 import { Search, Eye, X } from 'lucide-react';
+import { fetchAdminData, toggleUserStatus } from '../../store/slices/adminSlice';
 import api from '../../api';
 
 const AdminPanel = () => {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
+  const dispatch = useDispatch();
+  const { users, loading, error } = useSelector((state) => state.admin);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -27,20 +27,11 @@ const AdminPanel = () => {
   };
 
   useEffect(() => {
-    api.get('/admin/users')
-       .then(res => setUsers(res.data.users || []))
-       .catch(err => setError(err.response?.data?.message || 'Failed to fetch users'))
-       .finally(() => setLoading(false));
-  }, []);
+    dispatch(fetchAdminData());
+  },[dispatch]);
 
-  const handleStatusChange = async (userId, isActive) => {
-    try {
-      await api.put(`/admin/users/${userId}/status`, { is_active: isActive });
-      setSuccessMsg(`User status updated to ${isActive ? 'Active' : 'Inactive'}`);
-      setUsers(users.map(u => u.id === userId ? { ...u, is_active: isActive } : u));
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update user status');
-    }
+  const handleStatusChange = (userId, isActive) => {
+    dispatch(toggleUserStatus({ userId, isActive, isAdminPanel: true }));
   };
 
   if (loading) return <div className="loading-container"><CircularProgress /></div>;
@@ -122,9 +113,6 @@ const AdminPanel = () => {
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </div>
-      <Snackbar open={!!successMsg} autoHideDuration={6000} onClose={() => setSuccessMsg('')}>
-        <Alert onClose={() => setSuccessMsg('')} severity="success">{successMsg}</Alert>
-      </Snackbar>
 
       {/* View User Details Modal */}
       <Dialog open={!!viewUser} onClose={() => setViewUser(null)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '16px', overflow: 'hidden' } }}>
