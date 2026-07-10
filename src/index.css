@@ -1829,10 +1829,20 @@ animation: dropdownIn 0.2s ease;
 }
 
 /* --- Dashboard Stat Card Glow Effect --- */
+.dashboard-stat-card {
+  transition: box-shadow 0.3s ease, transform 0.3s ease, border 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.dashboard-stat-card:hover {
+  box-shadow: 0 0 25px 2px var(--card-glow-color, rgba(124, 92, 252, 0.4)), inset 0 0 5px 1px rgba(0, 0, 0, 0.03) !important;
+  border: 1px solid var(--card-glow-color, rgba(124, 92, 252, 0.3));
+  transform: translateY(-2px);
+}
+
 [data-theme="dark"] .dashboard-stat-card {
   box-shadow: 0 0 20px 2px var(--card-glow-color, rgba(124, 92, 252, 0.5)), inset 0 0 5px 1px rgba(255, 255, 255, 0.05) !important;
   border: 1px solid var(--card-glow-color, rgba(124, 92, 252, 0.5));
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 [data-theme="dark"] .dashboard-stat-card:hover {

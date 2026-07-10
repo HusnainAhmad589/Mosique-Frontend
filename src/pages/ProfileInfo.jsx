@@ -5,10 +5,13 @@ import { User as UserIcon, ArrowLeft, Edit3, X, Check, AlertTriangle, Trash2 } f
 import api from '../api';
 import { DASHBOARD_URL, LOGIN_URL } from '../routes/route_constants';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
+import { useDispatch } from 'react-redux';
+import { showToast } from '../store/slices/notificationSlice';
 
 const ProfileInfo = () => {
   const { user, updateUser, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -53,11 +56,12 @@ const ProfileInfo = () => {
     try {
       const response = await api.put('/auth/me', formData);
       updateUser(response.data.user);
-      setSuccess('Profile updated successfully!');
+      dispatch(showToast({ message: 'Profile updated successfully!', type: 'success' }));
       setIsEditing(false);
-      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update profile.');
+      const errMsg = err.response?.data?.message || 'Failed to update profile.';
+      setError(errMsg);
+      dispatch(showToast({ message: errMsg, type: 'error' }));
     } finally {
       setLoading(false);
     }
@@ -83,10 +87,13 @@ const ProfileInfo = () => {
     setDeactivating(true);
     try {
       await api.delete('/auth/deactivate-account');
+      dispatch(showToast({ message: 'Account deactivated successfully.', type: 'info' }));
       await logout();
       navigate(LOGIN_URL);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to deactivate account.');
+      const errMsg = err.response?.data?.message || 'Failed to deactivate account.';
+      setError(errMsg);
+      dispatch(showToast({ message: errMsg, type: 'error' }));
       setShowDeactivateDialog(false);
     } finally {
       setDeactivating(false);
@@ -102,10 +109,13 @@ const ProfileInfo = () => {
     setDeleting(true);
     try {
       await api.delete('/auth/delete-account', { data: { password: deletePassword } });
+      dispatch(showToast({ message: 'Account permanently deleted.', type: 'info' }));
       await logout();
       navigate(LOGIN_URL);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete account.');
+      const errMsg = err.response?.data?.message || 'Failed to delete account.';
+      setError(errMsg);
+      dispatch(showToast({ message: errMsg, type: 'error' }));
       setShowDeleteDialog(false);
       setDeletePassword('');
     } finally {

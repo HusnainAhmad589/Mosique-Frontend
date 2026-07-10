@@ -3,10 +3,13 @@ import { AuthContext } from '../context/AuthContext';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { UserPlus, Eye, EyeOff } from 'lucide-react';
 import { DASHBOARD_URL, LOGIN_URL } from '../routes/route_constants';
+import { useDispatch } from 'react-redux';
+import { showToast } from '../store/slices/notificationSlice';
 
 const Register = () => {
   const { register } = useContext(AuthContext);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
   const initialRole = searchParams.get('role') || 'listener';
 
@@ -28,13 +31,17 @@ const Register = () => {
     setLoading(true);
     try {
       await register(formData);
+      dispatch(showToast({ message: 'Registration successful!', type: 'success' }));
       navigate(DASHBOARD_URL);
     } catch (err) {
+      let errMsg = 'Registration failed.';
       if (err.response?.data?.errors) {
-        setError(err.response.data.errors.map(e => e.message).join(' '));
+        errMsg = err.response.data.errors.map(e => e.message).join(' ');
       } else {
-        setError(err.response?.data?.message || err.message || 'Registration failed.');
+        errMsg = err.response?.data?.message || err.message || 'Registration failed.';
       }
+      setError(errMsg);
+      dispatch(showToast({ message: errMsg, type: 'error' }));
     } finally {
       setLoading(false);
     }

@@ -1,22 +1,12 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:3001/api', // Note: backend is running on 3001 in user's terminal
+  baseURL: 'http://localhost:3001/api',
   headers: {
     'Content-Type': 'application/json',
   },
+  // This tells axios to send cookies with every request (required for HttpOnly cookies)
+  withCredentials: true,
 });
-
-// Add a request interceptor to attach the JWT token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('mosique_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
 
 export default api;

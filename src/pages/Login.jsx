@@ -3,10 +3,13 @@ import { AuthContext } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogIn, Eye, EyeOff } from 'lucide-react';
 import { DASHBOARD_URL, FORGOT_PASSWORD_URL, ROLE_SELECTION_URL, CHANGE_PASSWORD_URL } from '../routes/route_constants';
+import { useDispatch } from 'react-redux';
+import { showToast } from '../store/slices/notificationSlice';
 
 const Login = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,13 +21,16 @@ const Login = () => {
     setLoading(true);
     try {
       const data = await login(formData.email, formData.password);
+      dispatch(showToast({ message: 'Login successful!', type: 'success' }));
       if (data.user?.must_change_password) {
         navigate(CHANGE_PASSWORD_URL);
       } else {
         navigate(DASHBOARD_URL);
       }
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Login failed. Please try again.');
+      const errMsg = err.response?.data?.message || err.message || 'Login failed. Please try again.';
+      setError(errMsg);
+      dispatch(showToast({ message: errMsg, type: 'error' }));
     } finally {
       setLoading(false);
     }

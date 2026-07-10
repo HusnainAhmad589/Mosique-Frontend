@@ -1,57 +1,45 @@
-import { createContext, useState, useEffect } from 'react';
-import api from '../api';
+import { createContext, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { checkAuth, loginUser, registerUser, logoutUser, updateUserInfo } from '../store/slices/authSlice';
 
 export const AuthContext = createContext();
 
+// AuthProvider is kept for backward compatibility but now delegates to Redux.
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { user, loading } = useSelector((state) => state.auth);
 
+  // On app startup, restore session from token
   useEffect(() => {
-    const fetchUser = async () => {
-      const token = localStorage.getItem('mosique_token');
-      if (token) {
-        try {
-          const res = await api.get('/auth/me');
-          setUser(res.data.user);
-        } catch (err) {
-          console.error('Failed to fetch user', err);
-          localStorage.removeItem('mosique_token');
-        }
-      }
-      setLoading(false);
-    };
-
-    fetchUser();
-  }, []);
+    dispatch(checkAuth());
+  }, [dispatch]);
 
   const login = async (email, password) => {
-    const res = await api.post('/auth/login', { email, password });
-    localStorage.setItem('mosique_token', res.data.token);
-    setUser(res.data.user);
-    return res.data;
+    const result = await dispatch(loginUser({ email, password }));
+    if (loginUser.rejected.match(result)) {
+      const error = new Error(result.payload);
+      error.response = { data: { message: result.payload } };
+      throw error;
+    }
+    return result.payload; // { user, token }
   };
 
   const register = async (userData) => {
-    const res = await api.post('/auth/register', userData);
-    localStorage.setItem('mosique_token', res.data.token);
-    setUser(res.data.user);
-    return res.data;
+    const result = await dispatch(registerUser(userData));
+    if (registerUser.rejected.match(result)) {
+      const error = new Error(result.payload);
+      error.response = { data: { message: result.payload } };
+      throw error;
+    }
+    return result.payload;
   };
 
   const logout = async () => {
-    try {
-      await api.post('/auth/logout');
-    } catch (err) {
-      console.error(err);
-    } finally {
-      localStorage.removeItem('mosique_token');
-      setUser(null);
-    }
+    await dispatch(logoutUser());
   };
 
   const updateUser = (updatedUserData) => {
-    setUser({ ...user, ...updatedUserData });
+    dispatch(updateUserInfo(updatedUserData));
   };
 
   return (
