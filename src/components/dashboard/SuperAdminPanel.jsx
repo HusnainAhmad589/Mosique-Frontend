@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { useDispatch, useSelector } from 'react-redux';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Select, MenuItem, CircularProgress, Switch, TablePagination, Checkbox, Button, Dialog, DialogTitle, DialogContent, IconButton, Avatar, Alert } from '@mui/material';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Select, MenuItem, CircularProgress, Switch, TablePagination, Checkbox, Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, IconButton, Avatar, Alert } from '@mui/material';
 import { Trash2, Eye, X, Search } from 'lucide-react';
 import { fetchSuperAdminData, updateUserRole, toggleUserStatus, batchDeleteUsers } from '../../store/slices/adminSlice';
 import api from '../../api';
@@ -17,6 +17,7 @@ const SuperAdminPanel = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [viewUser, setViewUser] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(false);
 
   const filteredUsers = users.filter(u =>
     u.username?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -78,9 +79,13 @@ const SuperAdminPanel = () => {
   };
 
   const handleBatchDelete = () => {
-    if (!window.confirm('Are you sure you want to delete selected users?')) return;
+    setConfirmDialog(true);
+  };
+
+  const executeBatchDelete = () => {
     dispatch(batchDeleteUsers(selectedUsers));
     setSelectedUsers([]);
+    setConfirmDialog(false);
   };
 
   if (loading) return <div className="loading-container"><CircularProgress /></div>;
@@ -88,6 +93,16 @@ const SuperAdminPanel = () => {
 
   return (
     <div>
+      <Dialog open={confirmDialog} onClose={() => setConfirmDialog(false)} PaperProps={{ style: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-main)', minWidth: '300px' } }}>
+        <DialogTitle>Confirm Batch Delete</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete {selectedUsers.length} selected users?</Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={() => setConfirmDialog(false)} sx={{ color: 'var(--text-muted)' }}>Cancel</Button>
+          <Button onClick={executeBatchDelete} variant="contained" color="error">Delete</Button>
+        </DialogActions>
+      </Dialog>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
         <h2 className="panel-title" style={{ margin: 0 }}>Super Admin Controls</h2>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>

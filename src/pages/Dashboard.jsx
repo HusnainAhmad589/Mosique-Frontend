@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
@@ -6,93 +6,154 @@ import {
   Users, ListMusic, Plus, Search, Bell, ChevronDown, Play, Heart,
   Shuffle, SkipBack, SkipForward, Repeat, Pause, Volume2, SlidersHorizontal, Edit3, Moon, Sun
 } from 'lucide-react';
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Select, MenuItem, Snackbar, Alert, CircularProgress, Box, Button, Grid, Card, CardContent, Divider, Switch, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, ThemeProvider, createTheme } from '@mui/material';
+import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Select, MenuItem, Snackbar, Alert, CircularProgress, Box, Button, Grid, Card, CardContent, Divider, Switch, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, ThemeProvider, createTheme, Menu, Tooltip } from '@mui/material';
 import api from '../api';
 import { LOGIN_URL, DASHBOARD_URL, PROFILE_URL, CHANGE_PASSWORD_URL } from '../routes/route_constants';
 
 import SuperAdminPanel from '../components/dashboard/SuperAdminPanel';
 import AdminPanel from '../components/dashboard/AdminPanel';
 import ArtistPanel from '../components/dashboard/ArtistPanel';
+import AlbumsPanel from '../components/dashboard/AlbumsPanel';
+import PlaylistsPanel from '../components/dashboard/PlaylistsPanel';
+import ArtistsPanel from '../components/dashboard/ArtistsPanel';
+import ModeratorPanel from '../components/dashboard/ModeratorPanel';
+import LibraryPanel from '../components/dashboard/LibraryPanel';
 import NotificationBell from '../components/common/NotificationBell';
 
 // --- Listener Panel ---
-const ListenerPanel = () => {
+const ListenerPanel = ({ onPlayTrack, currentTrack }) => {
   const [feed, setFeed] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
   
-  useEffect(() => {
-    api.get('/listener/feed')
-       .then(res => setFeed(res.data.feed || []))
-       .catch(err => console.error(err));
-  }, []);
-
-  return (
-    <div>
-      <h2 className="panel-title">Your Music Feed</h2>
-      <div className="panel-card">
-        {feed.length === 0 ? (
-          <div className="panel-empty">
-            <Music size={48} style={{ marginBottom: '12px', opacity: 0.3 }} />
-            <p>Your feed is currently empty. Start discovering music!</p>
-          </div>
-        ) : (
-          feed.map((item, i) => (
-            <div key={i} className="panel-feed-item">
-              <span style={{ fontWeight: 600 }}>{item.title || 'Unknown Track'}</span>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-};
-
-// --- Moderator Panel ---
-const ModeratorPanel = () => {
-  const [reports, setReports] = useState([]);
-  
-  useEffect(() => {
-    const fetchReports = () => {
-      api.get('/moderator/reports')
-         .then(res => setReports(res.data.reports || []))
-         .catch(err => console.error(err));
-    };
-    fetchReports();
-  }, []);
-
-  const handleResolve = async (id) => {
+  const fetchFeed = async (search = '') => {
+    setLoading(true);
     try {
-      await api.put(`/moderator/reports/${id}/resolve`);
-      setReports(reports.filter(r => r.id !== id));
+      const params = search ? `?search=${encodeURIComponent(search)}` : '';
+      const res = await api.get(`/listener/feed${params}`);
+      setFeed(res.data.feed || []);
     } catch(err) {
       console.error(err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchFeed();
+  }, []);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    fetchFeed(searchQuery);
   };
 
   return (
     <div>
-      <h2 className="panel-title">Moderation Queue</h2>
-      <div className="panel-card">
-        {reports.length === 0 ? (
+      <h2 className="panel-title">Discover Music</h2>
+      
+      {/* Search */}
+      <form onSubmit={handleSearch} style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+        <input 
+          type="text" 
+          placeholder="Search songs by title..." 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{ flex: 1, padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-main)', fontSize: '0.95rem' }}
+        />
+        <button type="submit" className="btn btn-primary" style={{ width: 'auto', padding: '12px 24px' }}>
+          <Search size={16} style={{ marginRight: '6px' }} /> Search
+        </button>
+      </form>
+
+      {loading ? (
+        <div className="loading-container"><CircularProgress /></div>
+      ) : feed.length === 0 ? (
+        <div className="panel-card">
           <div className="panel-empty">
-            <p>No pending reports. All clear!</p>
+            <Music size={48} style={{ marginBottom: '12px', opacity: 0.3 }} />
+            <p>No songs found. Artists haven't uploaded any tracks yet!</p>
           </div>
-        ) : (
-          reports.map((report, i) => (
-            <div key={i} className="panel-report-item">
-              <div>
-                <div style={{ fontWeight: 600, marginBottom: '4px' }}>Report #{report.id}</div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{report.description || 'No description provided'}</div>
-              </div>
-              <button className="btn btn-outline" style={{ width: 'auto', padding: '8px 20px' }} onClick={() => handleResolve(report.id)}>
-                Resolve
-              </button>
-            </div>
-          ))
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="panel-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <TableContainer>
+            <Table>
+              <TableHead sx={{ backgroundColor: 'var(--bg-elevated)' }}>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 600, color: 'var(--text-muted)', width: '40px' }}>#</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: 'var(--text-muted)' }}>Title</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: 'var(--text-muted)' }}>Artist</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: 'var(--text-muted)' }}>Genre</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: 'var(--text-muted)' }}>Album</TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: 'var(--text-muted)', width: '60px' }}></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {feed.map((song, idx) => {
+                  const isActive = currentTrack?.id === song.id;
+                  return (
+                    <TableRow 
+                      key={song.id} 
+                      hover 
+                      sx={{ cursor: 'pointer', backgroundColor: isActive ? 'rgba(124, 92, 252, 0.08)' : 'transparent' }}
+                      onClick={() => onPlayTrack(song)}
+                    >
+                      <TableCell sx={{ color: isActive ? 'var(--primary)' : 'var(--text-muted)' }}>{idx + 1}</TableCell>
+                      <TableCell>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '6px', background: song.cover_url ? 'transparent' : `hsl(${(song.id * 47) % 360}, 60%, 70%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                            {song.cover_url ? (
+                              <img src={`http://localhost:3001${song.cover_url}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                              <Music size={16} color="white" />
+                            )}
+                          </div>
+                          <span style={{ fontWeight: 500, color: isActive ? 'var(--primary)' : 'var(--text-main)' }}>{song.title}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell sx={{ color: 'var(--text-main)' }}>{song.artist_name}</TableCell>
+                      <TableCell>
+                        <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, backgroundColor: 'rgba(124, 92, 252, 0.1)', color: 'var(--primary)' }}>
+                          {song.category_name || 'Uncategorized'}
+                        </span>
+                      </TableCell>
+                      <TableCell sx={{ color: 'var(--text-muted)' }}>{song.album_title || '—'}</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                          <IconButton 
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              api.post('/listener/favorites', { trackId: song.id })
+                                .then(() => setToast({ open: true, message: 'Added to Liked Songs!', severity: 'success' }))
+                                .catch(err => setToast({ open: true, message: err.response?.data?.message || 'Error adding to favorites', severity: 'error' }));
+                            }}
+                            title="Add to Liked Songs"
+                            sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--primary)' } }}
+                          >
+                            <Heart size={20} />
+                          </IconButton>
+                          <button 
+                            className="track-card-play" 
+                            onClick={(e) => { e.stopPropagation(); onPlayTrack(song); }}
+                            style={{ width: '32px', height: '32px', borderRadius: '50%', border: 'none', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                          >
+                            <Play size={14} fill="white" />
+                          </button>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </div>
+      )}
     </div>
   );
 };
+
 // --- Dashboard Stats Panel ---
 const DashboardStatsPanel = () => {
   const { user } = useContext(AuthContext);
@@ -202,6 +263,15 @@ const DashboardStatsPanel = () => {
     </div>
   );
 };
+
+// --- Under Construction Panel ---
+const UnderConstruction = ({ title }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+    <Compass size={64} style={{ marginBottom: '20px', opacity: 0.3 }} />
+    <h2 style={{ color: 'var(--text-main)', marginBottom: '10px' }}>{title}</h2>
+    <p>We're still building this section. Check back soon!</p>
+  </div>
+);
 
 // --- Manage Admins Panel ---
 const ManageAdminsPanel = () => {
@@ -395,29 +465,211 @@ const PLACEHOLDER_TRACKS = [
   { title: 'Weightless', artist: 'Arlo Parks', duration: '3:59', color: '#C4B0FF' },
 ];
 
-const PLACEHOLDER_MIXES = [
-  { title: 'Daily Mix 1', desc: 'Your daily music mix', gradient: 'linear-gradient(135deg, #E8A0BF 0%, #F4A896 100%)' },
-  { title: 'Chill Vibes', desc: 'Relax and unwind', gradient: 'linear-gradient(135deg, #C4B0FF 0%, #7C5CFC 100%)' },
-  { title: 'Focus Flow', desc: 'Deep focus music', gradient: 'linear-gradient(135deg, #7EBAFF 0%, #C4B0FF 100%)' },
-  { title: 'Feel Good', desc: 'Uplifting songs to boost you', gradient: 'linear-gradient(135deg, #F5B971 0%, #F4A896 100%)' },
-];
-
-const PLACEHOLDER_PLAYLISTS = [
-  { name: 'Chill Vibes', color: '#7C5CFC' },
-  { name: 'Focus Flow', color: '#7EBAFF' },
-  { name: 'Night Drive', color: '#E8A0BF' },
-  { name: 'All Time Hits', color: '#F5B971' },
-];
-
 // --- Main Dashboard Container ---
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState('home');
-  const [isPlaying, setIsPlaying] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [darkMode, setDarkMode] = useState(localStorage.getItem('theme') === 'dark');
+
+  // --- Audio Player State ---
+  const audioRef = useRef(new Audio());
+  const [currentTrack, setCurrentTrack] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(0.7);
+  const [playlist, setPlaylist] = useState([]); // all songs for skip next/prev
+  const [homeFeed, setHomeFeed] = useState([]); // for home view
+  const [userPlaylists, setUserPlaylists] = useState([]);
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
+  
+  // Playlist Dialog & Menu State
+  const [playlistDialog, setPlaylistDialog] = useState({ open: false, track: null, name: '' });
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [menuTrack, setMenuTrack] = useState(null);
+
+  // Hero Banner Carousel State
+  const [bannerIndex, setBannerIndex] = useState(0);
+
+  const handleCloseToast = () => setToast(prev => ({ ...prev, open: false }));
+
+  // Fetch songs & playlists for the Home view
+  useEffect(() => {
+    const role = user?.role?.toLowerCase();
+    if (role === 'listener' || role === 'artist') {
+      api.get('/listener/feed')
+        .then(res => {
+          const songs = res.data.feed || [];
+          setHomeFeed(songs);
+          setPlaylist(songs);
+        })
+        .catch(err => console.error(err));
+        
+      fetch('http://localhost:3001/api/listener/playlists', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('mosique_token')}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) setUserPlaylists(data.playlists || []);
+      })
+      .catch(console.error);
+    }
+  }, [user?.role]);
+
+  // Auto-rotate hero banner
+  useEffect(() => {
+    if (homeFeed.length > 0) {
+      const maxItems = Math.min(homeFeed.length, 3);
+      const timer = setInterval(() => {
+        setBannerIndex(prev => (prev + 1) % maxItems);
+      }, 5000);
+      return () => clearInterval(timer);
+    }
+  }, [homeFeed]);
+
+  // Audio event listeners
+  useEffect(() => {
+    const audio = audioRef.current;
+    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const onLoadedMetadata = () => setDuration(audio.duration);
+    const onEnded = () => handleSkipForward();
+
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+    audio.addEventListener('ended', onEnded);
+
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+      audio.removeEventListener('ended', onEnded);
+    };
+  }, [currentTrack]);
+
+  const handlePlayTrack = useCallback((song) => {
+    const audio = audioRef.current;
+    if (currentTrack?.id === song.id) {
+      // Toggle play/pause if same track
+      if (isPlaying) {
+        audio.pause();
+        setIsPlaying(false);
+      } else {
+        audio.play();
+        setIsPlaying(true);
+      }
+      return;
+    }
+    // New track
+    audio.src = `http://localhost:3001${song.audio_url}`;
+    audio.volume = volume;
+    audio.play();
+    setCurrentTrack(song);
+    setIsPlaying(true);
+  }, [currentTrack, isPlaying, volume]);
+
+  const handleAddToPlaylistClick = (track, e) => {
+    e.stopPropagation();
+    setMenuTrack(track);
+    setMenuAnchor(e.currentTarget);
+  };
+
+  const handleCreateNewPlaylistClick = () => {
+    setPlaylistDialog({ open: true, track: menuTrack, name: '' });
+    setMenuAnchor(null);
+  };
+
+  const submitAddToPlaylist = async (track, name) => {
+    if (!name || !name.trim() || !track) return;
+    
+    try {
+      const res = await fetch('http://localhost:3001/api/listener/playlists', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('mosique_token')}`
+        },
+        body: JSON.stringify({ name: name.trim(), songId: track.id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setToast({ open: true, message: data.message, severity: 'success' });
+        // Refresh playlists in background
+        fetch('http://localhost:3001/api/listener/playlists', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('mosique_token')}` }
+        })
+        .then(r => r.json())
+        .then(d => { if (d.success) setUserPlaylists(d.playlists || []) })
+        .catch(console.error);
+      } else {
+        setToast({ open: true, message: data.message || 'Failed to add to playlist.', severity: 'error' });
+      }
+    } catch (err) {
+      console.error(err);
+      setToast({ open: true, message: 'Failed to add to playlist.', severity: 'error' });
+    }
+  };
+
+  const handleExistingPlaylistClick = (playlistName) => {
+    submitAddToPlaylist(menuTrack, playlistName);
+    setMenuAnchor(null);
+  };
+
+  const handlePlaylistSubmit = async () => {
+    const { track, name } = playlistDialog;
+    setPlaylistDialog({ open: false, track: null, name: '' });
+    await submitAddToPlaylist(track, name);
+  };
+
+  const handleTogglePlay = () => {
+    const audio = audioRef.current;
+    if (!currentTrack) return;
+    if (isPlaying) {
+      audio.pause();
+      setIsPlaying(false);
+    } else {
+      audio.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const handleSkipForward = () => {
+    if (playlist.length === 0) return;
+    const currentIdx = playlist.findIndex(s => s.id === currentTrack?.id);
+    const nextIdx = (currentIdx + 1) % playlist.length;
+    handlePlayTrack(playlist[nextIdx]);
+  };
+
+  const handleSkipBack = () => {
+    if (playlist.length === 0) return;
+    const currentIdx = playlist.findIndex(s => s.id === currentTrack?.id);
+    const prevIdx = (currentIdx - 1 + playlist.length) % playlist.length;
+    handlePlayTrack(playlist[prevIdx]);
+  };
+
+  const handleSeek = (e) => {
+    const bar = e.currentTarget;
+    const rect = bar.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    audioRef.current.currentTime = pct * duration;
+  };
+
+  const handleVolumeChange = (e) => {
+    const bar = e.currentTarget;
+    const rect = bar.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    setVolume(pct);
+    audioRef.current.volume = pct;
+  };
+
+  const formatTime = (sec) => {
+    if (!sec || isNaN(sec)) return '0:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
 
   useEffect(() => {
     if (darkMode) {
@@ -464,6 +716,18 @@ const Dashboard = () => {
     }
 
     if (activeView === 'home') {
+      const searchLower = globalSearch.toLowerCase().trim();
+      const filteredFeed = searchLower
+        ? homeFeed.filter(s =>
+            s.title?.toLowerCase().includes(searchLower) ||
+            s.artist_name?.toLowerCase().includes(searchLower) ||
+            s.album_title?.toLowerCase().includes(searchLower) ||
+            s.category_name?.toLowerCase().includes(searchLower)
+          )
+        : homeFeed;
+      const bannerItems = homeFeed.slice(0, 3);
+      const bannerItem = bannerItems[bannerIndex] || bannerItems[0];
+
       return (
         <>
           {/* Welcome */}
@@ -473,72 +737,119 @@ const Dashboard = () => {
           </div>
 
           {/* Hero Banner */}
-          <div className="hero-banner">
-            <div className="hero-content">
-              <span className="hero-tag">New Album</span>
-              <h2 className="hero-title">Echoes In<br/>The Distance</h2>
-              <p className="hero-subtitle">The new album from Aurora. Out now.</p>
-              <button className="hero-btn">
-                Listen Now <Play size={16} fill="white" />
-              </button>
+          {bannerItem ? (
+            <div className="hero-banner" style={{
+              backgroundImage: bannerItem.cover_url ? `linear-gradient(to right, rgba(124, 92, 252, 0.9), rgba(124, 92, 252, 0.6)), url(http://localhost:3001${bannerItem.cover_url})` : undefined,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              transition: 'background-image 0.5s ease-in-out'
+            }}>
+              <div className="hero-content">
+                <span className="hero-tag">{bannerItem.album_title ? 'New Album Track' : 'New Track'}</span>
+                <h2 className="hero-title">{bannerItem.album_title || bannerItem.title}</h2>
+                <p className="hero-subtitle">By {bannerItem.artist_name || 'Unknown Artist'}. Out now.</p>
+                <button className="hero-btn" onClick={() => handlePlayTrack(bannerItem)}>
+                  Listen Now <Play size={16} fill="white" />
+                </button>
+              </div>
+              <div className="hero-decoration">
+                {bannerItem.cover_url ? (
+                  <img src={`http://localhost:3001${bannerItem.cover_url}`} alt="Cover" style={{ width: '120px', height: '120px', borderRadius: '8px', boxShadow: '0 8px 16px rgba(0,0,0,0.2)' }} />
+                ) : (
+                  <div style={{ width: '80px', height: '80px', background: 'rgba(255,255,255,0.3)', borderRadius: '20px', transform: 'rotate(15deg)' }} />
+                )}
+              </div>
             </div>
-            <div className="hero-decoration">
-              <div style={{ width: '80px', height: '80px', background: 'rgba(255,255,255,0.3)', borderRadius: '20px', transform: 'rotate(15deg)' }} />
+          ) : (
+            <div className="hero-banner">
+              <div className="hero-content">
+                <span className="hero-tag">Welcome</span>
+                <h2 className="hero-title">Discover<br/>New Music</h2>
+                <p className="hero-subtitle">Artists are currently uploading their tracks.</p>
+              </div>
+              <div className="hero-decoration">
+                <div style={{ width: '80px', height: '80px', background: 'rgba(255,255,255,0.3)', borderRadius: '20px', transform: 'rotate(15deg)' }} />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Carousel Dots */}
-          <div className="carousel-dots">
-            <button className="carousel-dot active" />
-            <button className="carousel-dot" />
-            <button className="carousel-dot" />
-          </div>
+          {bannerItems.length > 0 && (
+            <div className="carousel-dots">
+              {bannerItems.map((_, i) => (
+                <button 
+                  key={i} 
+                  className={`carousel-dot ${i === bannerIndex ? 'active' : ''}`}
+                  onClick={() => setBannerIndex(i)}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Popular Tracks */}
           <div className="section-header">
-            <h2 className="section-title">Popular Tracks</h2>
-            <button className="section-see-all">See All</button>
+            <h2 className="section-title">Recent Uploads</h2>
+            <button className="section-see-all" onClick={() => setActiveView(user.role?.toLowerCase() || 'listener')}>See All</button>
           </div>
           <div className="tracks-grid">
-            {PLACEHOLDER_TRACKS.map((track, i) => (
-              <div key={i} className="track-card">
-                <div className="track-card-art" style={{ background: track.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Music size={20} color="white" />
+            {(filteredFeed.length > 0 ? filteredFeed.slice(0, 6) : (!searchLower ? PLACEHOLDER_TRACKS : [])).map((track, i) => (
+              <div key={track.id || i} className="track-card" onClick={() => track.audio_url && handlePlayTrack(track)} style={{ cursor: track.audio_url ? 'pointer' : 'default' }}>
+                <div className="track-card-art" style={{ background: track.cover_url ? 'transparent' : (track.color || `hsl(${(i * 67) % 360}, 60%, 70%)`), display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  {track.cover_url ? (
+                    <img src={`http://localhost:3001${track.cover_url}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <Music size={20} color="white" />
+                  )}
                 </div>
                 <div className="track-card-info">
                   <div className="track-card-title">{track.title}</div>
-                  <div className="track-card-artist">{track.artist}</div>
-                  <div className="track-card-duration">{track.duration}</div>
+                  <div className="track-card-artist">{track.artist_name || track.artist || 'Unknown'}</div>
+                  <div className="track-card-duration">{track.category_name || track.duration || ''}</div>
                 </div>
-                <button className="track-card-play">
-                  <Play size={14} fill="var(--primary)" />
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="track-card-play" title="Add to Playlist" onClick={(e) => handleAddToPlaylistClick(track, e)}>
+                    <Plus size={14} fill="var(--text-main)" stroke="var(--text-main)" />
+                  </button>
+                  <button className="track-card-play" title="Play" onClick={(e) => { e.stopPropagation(); if (track.audio_url) handlePlayTrack(track); }}>
+                    <Play size={14} fill="var(--primary)" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
 
-          {/* Made for You */}
+          {/* Made for You (Original Song Cards) */}
           <div className="section-header">
             <h2 className="section-title">Made for You</h2>
             <button className="section-see-all">See All</button>
           </div>
           <div className="mix-grid">
-            {PLACEHOLDER_MIXES.map((mix, i) => (
-              <div key={i} className="mix-card">
-                <div className="mix-card-gradient" style={{ background: mix.gradient }}>
-                  <Music size={40} color="rgba(255,255,255,0.6)" />
+            {filteredFeed.slice(0, 4).map((track, i) => (
+              <div key={track.id || i} className="mix-card" onClick={() => track.audio_url && handlePlayTrack(track)} style={{ cursor: track.audio_url ? 'pointer' : 'default' }}>
+                <div className="mix-card-gradient" style={{ background: track.cover_url ? `url(http://localhost:3001${track.cover_url}) center/cover` : `hsl(${(i * 87) % 360}, 60%, 70%)` }}>
+                  {!track.cover_url && <Music size={40} color="rgba(255,255,255,0.6)" />}
                 </div>
                 <div className="mix-card-body">
                   <div>
-                    <div className="mix-card-title">{mix.title}</div>
-                    <div className="mix-card-desc">{mix.desc}</div>
+                    <div className="mix-card-title">{track.title}</div>
+                    <div className="mix-card-desc">By {track.artist_name || 'Unknown Artist'}</div>
                   </div>
-                  <button className="mix-card-play">
-                    <Play size={16} fill="white" />
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button className="mix-card-play" style={{ background: 'var(--bg-elevated)', border: '1px solid rgba(255,255,255,0.1)' }} title="Add to Playlist" onClick={(e) => handleAddToPlaylistClick(track, e)}>
+                      <Plus size={16} color="var(--text-main)" />
+                    </button>
+                    <button className="mix-card-play" title="Play" onClick={(e) => { e.stopPropagation(); if (track.audio_url) handlePlayTrack(track); }}>
+                      <Play size={16} fill="white" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
+            {homeFeed.length === 0 && (
+              <div style={{ color: 'var(--text-muted)', padding: '20px' }}>
+                More tracks will appear here once artists upload them!
+              </div>
+            )}
           </div>
         </>
       );
@@ -548,6 +859,11 @@ const Dashboard = () => {
       return <ManageAdminsPanel />;
     }
 
+    if (activeView === 'library') return <LibraryPanel onPlayTrack={handlePlayTrack} currentTrack={currentTrack} />;
+    if (activeView === 'albums') return <AlbumsPanel onPlayTrack={handlePlayTrack} currentTrack={currentTrack} />;
+    if (activeView === 'artists') return <ArtistsPanel homeFeed={homeFeed} onPlayTrack={handlePlayTrack} currentTrack={currentTrack} />;
+    if (activeView === 'playlists') return <PlaylistsPanel onPlayTrack={handlePlayTrack} currentTrack={currentTrack} />;
+
     switch(role) {
       case 'superadmin':
         return <SuperAdminPanel />;
@@ -556,7 +872,7 @@ const Dashboard = () => {
       case 'artist':
         return <ArtistPanel />;
       case 'listener':
-        return <ListenerPanel />;
+        return <ListenerPanel onPlayTrack={handlePlayTrack} currentTrack={currentTrack} />;
       case 'moderator':
         return <ModeratorPanel />;
       default:
@@ -629,30 +945,26 @@ const Dashboard = () => {
               <Home size={20} /> Home
             </button>
           </li>
-          <li className="sidebar-nav-item">
-            <a href="#">
-              <Compass size={20} /> Explore
-            </a>
-          </li>
-          <li className="sidebar-nav-item">
-            <a href="#">
+
+          <li className={`sidebar-nav-item ${activeView === 'library' ? 'active' : ''}`}>
+            <button onClick={() => setActiveView('library')}>
               <Library size={20} /> Library
-            </a>
+            </button>
           </li>
-          <li className="sidebar-nav-item">
-            <a href="#">
+          <li className={`sidebar-nav-item ${activeView === 'albums' ? 'active' : ''}`}>
+            <button onClick={() => setActiveView('albums')}>
               <Disc3 size={20} /> Albums
-            </a>
+            </button>
           </li>
-          <li className="sidebar-nav-item">
-            <a href="#">
+          <li className={`sidebar-nav-item ${activeView === 'artists' ? 'active' : ''}`}>
+            <button onClick={() => setActiveView('artists')}>
               <Users size={20} /> Artists
-            </a>
+            </button>
           </li>
-          <li className="sidebar-nav-item">
-            <a href="#">
+          <li className={`sidebar-nav-item ${activeView === 'playlists' ? 'active' : ''}`}>
+            <button onClick={() => setActiveView('playlists')}>
               <ListMusic size={20} /> Playlists
-            </a>
+            </button>
           </li>
           {roleNavLabel && (
             <li className={`sidebar-nav-item ${(activeView !== 'home' && activeView !== 'manage_admins') ? 'active' : ''}`}>
@@ -670,22 +982,6 @@ const Dashboard = () => {
           )}
         </ul>
 
-        <div className="sidebar-section-title">
-          Your Playlists
-          <button><Plus size={14} /></button>
-        </div>
-        <ul className="sidebar-playlists">
-          {PLACEHOLDER_PLAYLISTS.map((pl, i) => (
-            <li key={i}>
-              <a href="#">
-                <span className="playlist-dot" style={{ background: pl.color }} />
-                {pl.name}
-              </a>
-            </li>
-          ))}
-        </ul>
-
-        
       </aside>
 
       {/* ===== MAIN CONTENT ===== */}
@@ -694,7 +990,17 @@ const Dashboard = () => {
         <div className="top-bar">
           <div className="search-bar">
             <Search size={18} />
-            <input type="text" placeholder="Search for songs, artists, albums..." />
+            <input 
+              type="text" 
+              placeholder="Search for songs, artists, albums..." 
+              value={globalSearch}
+              onChange={(e) => {
+                setGlobalSearch(e.target.value);
+                if (e.target.value.trim()) {
+                  setActiveView('home');
+                }
+              }}
+            />
           </div>
           <div className="top-bar-actions">
             <IconButton onClick={() => setDarkMode(!darkMode)} sx={{ color: 'var(--text-secondary)' }}>
@@ -750,48 +1056,168 @@ const Dashboard = () => {
       {user?.role?.toLowerCase() !== 'admin' && user?.role?.toLowerCase() !== 'super admin' && user?.role?.toLowerCase() !== 'superadmin' && (
         <div className="player-bar">
           <div className="player-track-info">
-            <div className="player-track-art" style={{ background: '#E8A0BF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Music size={20} color="white" />
+            <div className="player-track-art" style={{ background: currentTrack?.cover_url ? 'transparent' : '#E8A0BF', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              {currentTrack?.cover_url ? (
+                <img src={`http://localhost:3001${currentTrack.cover_url}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <Music size={20} color="white" />
+              )}
             </div>
             <div>
-              <div className="player-track-name">Sunset Dreams</div>
-              <div className="player-track-artist">Oceans</div>
+              <div className="player-track-name">{currentTrack?.title || 'No track selected'}</div>
+              <div className="player-track-artist">{currentTrack?.artist_name || 'Select a song to play'}</div>
             </div>
-            <button className="player-like-btn">
-              <Heart size={18} />
-            </button>
+            <Tooltip title="Save to Liked Songs" placement="top">
+              <button 
+                className="player-like-btn"
+                onClick={() => {
+                  if (currentTrack) {
+                    api.post('/listener/favorites', { trackId: currentTrack.id })
+                      .then(() => setToast({ open: true, message: 'Added to Liked Songs!', severity: 'success' }))
+                      .catch(err => setToast({ open: true, message: err.response?.data?.message || 'Error adding to favorites', severity: 'error' }));
+                  }
+                }}
+              >
+                <Heart size={18} />
+              </button>
+            </Tooltip>
           </div>
 
           <div className="player-controls">
             <div className="player-buttons">
-              <button className="player-btn"><Shuffle size={16} /></button>
-              <button className="player-btn"><SkipBack size={18} /></button>
-              <button className="player-btn-main" onClick={() => setIsPlaying(!isPlaying)}>
-                {isPlaying ? <Pause size={18} fill="white" /> : <Play size={18} fill="white" style={{ marginLeft: '2px' }} />}
-              </button>
-              <button className="player-btn"><SkipForward size={18} /></button>
-              <button className="player-btn"><Repeat size={16} /></button>
+              <Tooltip title="Enable Shuffle" placement="top">
+                <button className="player-btn"><Shuffle size={16} /></button>
+              </Tooltip>
+              <Tooltip title="Previous track" placement="top">
+                <button className="player-btn" onClick={handleSkipBack}><SkipBack size={18} /></button>
+              </Tooltip>
+              <Tooltip title={isPlaying ? "Pause" : "Play"} placement="top">
+                <button className="player-btn-main" onClick={handleTogglePlay}>
+                  {isPlaying ? <Pause size={18} fill="white" /> : <Play size={18} fill="white" style={{ marginLeft: '2px' }} />}
+                </button>
+              </Tooltip>
+              <Tooltip title="Next track" placement="top">
+                <button className="player-btn" onClick={handleSkipForward}><SkipForward size={18} /></button>
+              </Tooltip>
+              <Tooltip title="Enable Repeat" placement="top">
+                <button className="player-btn"><Repeat size={16} /></button>
+              </Tooltip>
             </div>
             <div className="player-progress">
-              <span className="player-time">1:45</span>
-              <div className="player-progress-bar">
-                <div className="player-progress-fill" style={{ width: '47%' }} />
+              <span className="player-time">{formatTime(currentTime)}</span>
+              <div className="player-progress-bar" onClick={handleSeek} style={{ cursor: 'pointer' }}>
+                <div className="player-progress-fill" style={{ width: duration ? `${(currentTime / duration) * 100}%` : '0%' }} />
               </div>
-              <span className="player-time">3:45</span>
+              <span className="player-time">{formatTime(duration)}</span>
             </div>
           </div>
 
           <div className="player-extra">
             <div className="player-volume">
-              <button className="player-btn"><Volume2 size={16} /></button>
-              <div className="player-volume-bar">
-                <div className="player-volume-fill" />
+              <Tooltip title="Mute" placement="top">
+                <button className="player-btn"><Volume2 size={16} /></button>
+              </Tooltip>
+              <div className="player-volume-bar" onClick={handleVolumeChange} style={{ cursor: 'pointer' }}>
+                <div className="player-volume-fill" style={{ width: `${volume * 100}%` }} />
               </div>
             </div>
-            <button className="player-btn"><SlidersHorizontal size={16} /></button>
+            <Tooltip title="Audio Settings" placement="top">
+              <button className="player-btn"><SlidersHorizontal size={16} /></button>
+            </Tooltip>
           </div>
         </div>
       )}
+
+      {/* Playlist Selection Menu */}
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={() => setMenuAnchor(null)}
+        PaperProps={{
+          style: {
+            backgroundColor: 'var(--bg-elevated)',
+            color: 'var(--text-main)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            minWidth: '200px'
+          }
+        }}
+      >
+        <Typography variant="caption" sx={{ px: 2, py: 1, display: 'block', color: 'var(--text-muted)' }}>
+          Add "{menuTrack?.title}" to...
+        </Typography>
+        {userPlaylists.map(pl => (
+          <MenuItem 
+            key={pl.id} 
+            onClick={() => handleExistingPlaylistClick(pl.name)}
+            sx={{ '&:hover': { bgcolor: 'var(--bg-hover)' } }}
+          >
+            {pl.name}
+          </MenuItem>
+        ))}
+        {userPlaylists.length > 0 && <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />}
+        <MenuItem 
+          onClick={handleCreateNewPlaylistClick}
+          sx={{ color: 'var(--primary)', '&:hover': { bgcolor: 'var(--bg-hover)' } }}
+        >
+          <Plus size={16} style={{ marginRight: '8px' }} /> Create New Playlist
+        </MenuItem>
+      </Menu>
+
+      {/* Playlist Creation Dialog */}
+      <Dialog 
+        open={playlistDialog.open} 
+        onClose={() => setPlaylistDialog({ open: false, track: null, name: '' })}
+        PaperProps={{ style: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-main)', minWidth: '300px' } }}
+      >
+        <DialogTitle>Add to Playlist</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2, color: 'var(--text-muted)' }}>
+            Enter a playlist name to add "{playlistDialog.track?.title}":
+          </Typography>
+          <input 
+            type="text" 
+            autoFocus
+            value={playlistDialog.name}
+            onChange={(e) => setPlaylistDialog(prev => ({ ...prev, name: e.target.value }))}
+            style={{ 
+              width: '100%', 
+              padding: '10px', 
+              borderRadius: '4px', 
+              border: '1px solid rgba(255,255,255,0.1)', 
+              backgroundColor: 'var(--bg-main)', 
+              color: 'var(--text-main)',
+              outline: 'none'
+            }}
+            placeholder="Playlist name..."
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handlePlaylistSubmit();
+              }
+            }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={() => setPlaylistDialog({ open: false, track: null, name: '' })} sx={{ color: 'var(--text-muted)' }}>
+            Cancel
+          </Button>
+          <Button onClick={handlePlaylistSubmit} variant="contained" sx={{ bgcolor: 'var(--primary)', '&:hover': { bgcolor: 'var(--primary-hover)' } }}>
+            Add
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Toast Notification */}
+      <Snackbar 
+        open={toast.open} 
+        autoHideDuration={4000} 
+        onClose={handleCloseToast}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseToast} severity={toast.severity} sx={{ width: '100%' }}>
+          {toast.message}
+        </Alert>
+      </Snackbar>
+
     </div>
     </ThemeProvider>
   );

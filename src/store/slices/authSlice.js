@@ -8,9 +8,15 @@ import api from '../../api';
 // Called on app startup — checks if a valid cookie session exists and restores the user
 export const checkAuth = createAsyncThunk('auth/checkAuth', async (_, { rejectWithValue }) => {
   try {
+    const token = localStorage.getItem('mosique_token');
+    if (token) {
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
     const res = await api.get('/auth/me');
     return res.data.user;
   } catch (err) {
+    localStorage.removeItem('mosique_token');
+    delete api.defaults.headers.common['Authorization'];
     return rejectWithValue(err.response?.data?.message || 'Session expired');
   }
 });
@@ -19,6 +25,10 @@ export const checkAuth = createAsyncThunk('auth/checkAuth', async (_, { rejectWi
 export const loginUser = createAsyncThunk('auth/loginUser', async ({ email, password }, { rejectWithValue }) => {
   try {
     const res = await api.post('/auth/login', { email, password });
+    if (res.data.token) {
+      localStorage.setItem('mosique_token', res.data.token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
+    }
     return res.data; // { user }
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || 'Login failed');
@@ -29,6 +39,10 @@ export const loginUser = createAsyncThunk('auth/loginUser', async ({ email, pass
 export const registerUser = createAsyncThunk('auth/registerUser', async (userData, { rejectWithValue }) => {
   try {
     const res = await api.post('/auth/register', userData);
+    if (res.data.token) {
+      localStorage.setItem('mosique_token', res.data.token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
+    }
     return res.data; // { user }
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || 'Registration failed');
@@ -39,9 +53,11 @@ export const registerUser = createAsyncThunk('auth/registerUser', async (userDat
 export const logoutUser = createAsyncThunk('auth/logoutUser', async (_, { rejectWithValue }) => {
   try {
     await api.post('/auth/logout');
-    // Cookie is cleared by the server — nothing to do on client side
   } catch (err) {
     // Ignore server error — always clear client state
+  } finally {
+    localStorage.removeItem('mosique_token');
+    delete api.defaults.headers.common['Authorization'];
   }
 });
 
