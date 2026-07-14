@@ -90,11 +90,43 @@ export const removeSavedAlbum = createAsyncThunk('library/removeSavedAlbum', asy
   }
 });
 
+export const fetchHistory = createAsyncThunk('library/fetchHistory', async (_, thunkAPI) => {
+  try {
+    const res = await fetch('http://localhost:3001/api/listener/history', {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('mosique_token')}` }
+    });
+    const data = await res.json();
+    if (data.success) return data.history;
+    return thunkAPI.rejectWithValue(data.message);
+  } catch (err) {
+    return thunkAPI.rejectWithValue('Network error');
+  }
+});
+
+export const addToHistory = createAsyncThunk('library/addToHistory', async (songId, thunkAPI) => {
+  try {
+    const res = await fetch('http://localhost:3001/api/listener/history', {
+      method: 'POST',
+      headers: { 
+        'Authorization': `Bearer ${localStorage.getItem('mosique_token')}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ songId })
+    });
+    const data = await res.json();
+    if (data.success) return { songId };
+    return thunkAPI.rejectWithValue(data.message);
+  } catch (err) {
+    return thunkAPI.rejectWithValue('Network error');
+  }
+});
+
 const librarySlice = createSlice({
   name: 'library',
   initialState: {
     favorites: [],
     savedAlbums: [],
+    history: [],
     loading: false,
     error: null,
     successMessage: null
@@ -152,6 +184,16 @@ const librarySlice = createSlice({
       .addCase(removeSavedAlbum.fulfilled, (state, action) => {
         state.savedAlbums = state.savedAlbums.filter(a => a.id !== action.payload.albumId);
         state.successMessage = action.payload.message;
+      })
+      // Fetch History
+      .addCase(fetchHistory.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(fetchHistory.fulfilled, (state, action) => {
+        state.loading = false;
+        state.history = action.payload;
+      })
+      .addCase(fetchHistory.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   }
 });

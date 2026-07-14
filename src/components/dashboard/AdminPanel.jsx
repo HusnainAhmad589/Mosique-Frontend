@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Switch, TablePagination, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button, Avatar, Alert } from '@mui/material';
-import { Search, Eye, X } from 'lucide-react';
-import { fetchAdminData, toggleUserStatus } from '../../store/slices/adminSlice';
+import { Search, Eye, X, CheckCircle } from 'lucide-react';
+import { fetchAdminData, toggleUserStatus, toggleUserVerification } from '../../store/slices/adminSlice';
 import api from '../../api';
 
 const AdminPanel = () => {
@@ -76,30 +76,46 @@ const AdminPanel = () => {
                 <TableCell>Email</TableCell>
                 <TableCell>Role</TableCell>
                 <TableCell>Status</TableCell>
+                <TableCell>Verified</TableCell>
                 <TableCell>View</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(user => (
-                <TableRow key={user.id}>
-                  <TableCell>{user.id}</TableCell>
-                  <TableCell>{user.username}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.role_name || user.Role?.name || user.Role?.slug}</TableCell>
-                  <TableCell>
-                    <Switch 
-                      checked={user.is_active !== false} 
-                      onChange={(e) => handleStatusChange(user.id, e.target.checked)} 
-                      color="primary" 
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <IconButton size="small" onClick={() => setViewUser(user)} sx={{ color: 'var(--primary, #7c3aed)' }}>
-                      <Eye size={18} />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map(user => {
+                const userRole = user.role_name || user.Role?.name || user.Role?.slug;
+                const isArtist = userRole === 'artist';
+                return (
+                  <TableRow key={user.id}>
+                    <TableCell>{user.id}</TableCell>
+                    <TableCell>{user.username}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{userRole}</TableCell>
+                    <TableCell>
+                      <Switch 
+                        checked={user.is_active !== false} 
+                        onChange={(e) => handleStatusChange(user.id, e.target.checked)} 
+                        color="primary" 
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {isArtist ? (
+                        <Switch 
+                          checked={user.is_verified === true} 
+                          onChange={(e) => dispatch(toggleUserVerification({ userId: user.id, isVerified: e.target.checked }))} 
+                          color="secondary" 
+                        />
+                      ) : (
+                        <span style={{ color: '#aaa', fontSize: '0.85rem' }}>N/A</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <IconButton size="small" onClick={() => setViewUser(user)} sx={{ color: 'var(--primary, #7c3aed)' }}>
+                        <Eye size={18} />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>
@@ -128,7 +144,10 @@ const AdminPanel = () => {
                   {viewUser.username?.[0]?.toUpperCase()}
                 </Avatar>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{viewUser.display_name || viewUser.username}</div>
+                  <div style={{ fontWeight: 700, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {viewUser.display_name || viewUser.username}
+                    {viewUser.is_verified && <CheckCircle size={18} color="#10B981" />}
+                  </div>
                   <div style={{ color: '#888', fontSize: '0.9rem' }}>@{viewUser.username}</div>
                 </div>
               </div>

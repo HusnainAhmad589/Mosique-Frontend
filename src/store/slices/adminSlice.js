@@ -52,6 +52,17 @@ export const toggleUserStatus = createAsyncThunk('admin/toggleUserStatus', async
   }
 });
 
+export const toggleUserVerification = createAsyncThunk('admin/toggleUserVerification', async ({ userId, isVerified }, { dispatch, rejectWithValue }) => {
+  try {
+    await api.put(`/admin/users/${userId}/verify`, { is_verified: isVerified });
+    dispatch(showToast({ message: `Artist verification updated to ${isVerified ? 'Verified' : 'Unverified'}` }));
+    return { userId, isVerified };
+  } catch (err) {
+    dispatch(showToast({ message: err.response?.data?.message || 'Failed to update verification', type: 'error' }));
+    return rejectWithValue(err.response?.data?.message);
+  }
+});
+
 export const batchDeleteUsers = createAsyncThunk('admin/batchDeleteUsers', async (userIds, { dispatch, rejectWithValue }) => {
   try {
     await api.delete('/super-admin/users/batch', { data: { userIds } });
@@ -130,6 +141,15 @@ const adminSlice = createSlice({
         const user = state.users.find(u => u.id === userId);
         if (user) {
           user.is_active = isActive;
+        }
+      })
+
+      // Toggle Verification
+      .addCase(toggleUserVerification.fulfilled, (state, action) => {
+        const { userId, isVerified } = action.payload;
+        const user = state.users.find(u => u.id === userId);
+        if (user) {
+          user.is_verified = isVerified;
         }
       })
 
