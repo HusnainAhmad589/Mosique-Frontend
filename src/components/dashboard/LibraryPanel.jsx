@@ -5,8 +5,8 @@ import {
   TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, 
   Alert, IconButton, Grid, Chip 
 } from '@mui/material';
-import { Play, Heart, Trash2, Disc } from 'lucide-react';
-import { fetchFavorites, removeFavorite, fetchSavedAlbums, removeSavedAlbum, clearLibraryMessages } from '../../store/slices/librarySlice';
+import { Play, Heart, Trash2, Disc, Clock } from 'lucide-react';
+import { fetchFavorites, removeFavorite, fetchSavedAlbums, removeSavedAlbum, fetchHistory, clearLibraryMessages } from '../../store/slices/librarySlice';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -23,12 +23,13 @@ function TabPanel(props) {
 
 const LibraryPanel = ({ onPlayTrack, currentTrack }) => {
   const dispatch = useDispatch();
-  const { favorites, savedAlbums, loading, error, successMessage } = useSelector(state => state.library);
+  const { favorites, savedAlbums, history, loading, error, successMessage } = useSelector(state => state.library);
   const [tabIndex, setTabIndex] = useState(0);
 
   useEffect(() => {
     dispatch(fetchFavorites());
     dispatch(fetchSavedAlbums());
+    dispatch(fetchHistory());
   }, [dispatch]);
 
   const handleUnlike = (trackId) => {
@@ -39,7 +40,18 @@ const LibraryPanel = ({ onPlayTrack, currentTrack }) => {
     dispatch(removeSavedAlbum(albumId));
   };
 
-  if (loading && favorites.length === 0 && savedAlbums.length === 0) {
+  const formatTimeAgo = (dateStr) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
+
+  if (loading && favorites.length === 0 && savedAlbums.length === 0 && history.length === 0) {
     return <div className="loading-container"><CircularProgress /></div>;
   }
 
@@ -63,6 +75,7 @@ const LibraryPanel = ({ onPlayTrack, currentTrack }) => {
         >
           <Tab label="Liked Songs" />
           <Tab label="Saved Albums" />
+          <Tab label="Recently Played" />
         </Tabs>
       </Box>
 
@@ -171,6 +184,71 @@ const LibraryPanel = ({ onPlayTrack, currentTrack }) => {
               </Grid>
             ))}
           </Grid>
+        )}
+      </TabPanel>
+
+      {/* Recently Played Tab */}
+      <TabPanel value={tabIndex} index={2}>
+        {history.length === 0 ? (
+          <Typography color="var(--text-muted)">You haven't played any songs yet.</Typography>
+        ) : (
+          <TableContainer component={Paper} sx={{ bgcolor: 'var(--bg-elevated)', backgroundImage: 'none' }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ color: 'var(--text-muted)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>#</TableCell>
+                  <TableCell sx={{ color: 'var(--text-muted)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Title</TableCell>
+                  <TableCell sx={{ color: 'var(--text-muted)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Artist</TableCell>
+                  <TableCell sx={{ color: 'var(--text-muted)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Played</TableCell>
+                  <TableCell sx={{ color: 'var(--text-muted)', borderBottom: '1px solid rgba(255,255,255,0.1)', textAlign: 'right' }}>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {history.map((song, index) => {
+                  const isPlaying = currentTrack?.id === song.id;
+                  return (
+                    <TableRow key={`${song.id}-${index}`} hover sx={{ '& td': { borderBottom: '1px solid rgba(255,255,255,0.05)' } }}>
+                      <TableCell sx={{ color: 'var(--text-main)' }}>{index + 1}</TableCell>
+                      <TableCell sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <div className="table-cover">
+                          {song.cover_url ? (
+                            <img src={`http://localhost:3001${song.cover_url}`} alt={song.title} />
+                          ) : (
+                            <div className="table-cover-fallback"><Disc size={20} /></div>
+                          )}
+                        </div>
+                        <Typography sx={{ color: isPlaying ? 'var(--primary)' : 'var(--text-main)', fontWeight: 'bold' }}>
+                          {song.title}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ color: 'var(--text-muted)' }}>{song.artist_name}</TableCell>
+                      <TableCell sx={{ color: 'var(--text-muted)' }}>
+                        <Chip 
+                          icon={<Clock size={12} />} 
+                          label={formatTimeAgo(song.played_at)} 
+                          size="small" 
+                          variant="outlined"
+                          sx={{ 
+                            color: 'var(--text-muted)', 
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            '& .MuiChip-icon': { color: 'var(--text-muted)' }
+                          }} 
+                        />
+                      </TableCell>
+                      <TableCell sx={{ textAlign: 'right' }}>
+                        <IconButton 
+                          className="table-play-btn"
+                          onClick={() => onPlayTrack(song)}
+                        >
+                          <Play size={20} />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
       </TabPanel>
     </div>

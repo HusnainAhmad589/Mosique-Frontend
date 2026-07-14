@@ -1,10 +1,12 @@
 import React, { useContext, useEffect, useState, useRef, useCallback } from 'react';
+import { useDispatch } from 'react-redux';
+import { addToHistory } from '../store/slices/librarySlice';
 import { AuthContext } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Music, LogOut, KeyRound, User as UserIcon, Home, Compass, Library, Disc3, 
   Users, ListMusic, Plus, Search, Bell, ChevronDown, Play, Heart,
-  Shuffle, SkipBack, SkipForward, Repeat, Pause, Volume2, SlidersHorizontal, Edit3, Moon, Sun
+  Shuffle, SkipBack, SkipForward, Repeat, Pause, Volume2, SlidersHorizontal, Edit3, Moon, Sun, CheckCircle
 } from 'lucide-react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Select, MenuItem, Snackbar, Alert, CircularProgress, Box, Button, Grid, Card, CardContent, Divider, Switch, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, ThemeProvider, createTheme, Menu, Tooltip } from '@mui/material';
 import api from '../api';
@@ -18,6 +20,7 @@ import PlaylistsPanel from '../components/dashboard/PlaylistsPanel';
 import ArtistsPanel from '../components/dashboard/ArtistsPanel';
 import ModeratorPanel from '../components/dashboard/ModeratorPanel';
 import LibraryPanel from '../components/dashboard/LibraryPanel';
+import CatalogPanel from '../components/dashboard/CatalogPanel';
 import NotificationBell from '../components/common/NotificationBell';
 
 // --- Listener Panel ---
@@ -112,7 +115,12 @@ const ListenerPanel = ({ onPlayTrack, currentTrack }) => {
                           <span style={{ fontWeight: 500, color: isActive ? 'var(--primary)' : 'var(--text-main)' }}>{song.title}</span>
                         </div>
                       </TableCell>
-                      <TableCell sx={{ color: 'var(--text-main)' }}>{song.artist_name}</TableCell>
+                      <TableCell sx={{ color: 'var(--text-main)' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          {song.artist_name}
+                          {song.is_verified && <CheckCircle size={14} color="#10B981" />}
+                        </span>
+                      </TableCell>
                       <TableCell>
                         <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, backgroundColor: 'rgba(124, 92, 252, 0.1)', color: 'var(--primary)' }}>
                           {song.category_name || 'Uncategorized'}
@@ -469,7 +477,12 @@ const PLACEHOLDER_TRACKS = [
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [activeView, setActiveView] = useState('home');
+  const dispatch = useDispatch();
+  const [activeView, setActiveView] = useState(() => sessionStorage.getItem('mosique_active_view') || 'home');
+  
+  useEffect(() => {
+    sessionStorage.setItem('mosique_active_view', activeView);
+  }, [activeView]);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [darkMode, setDarkMode] = useState(localStorage.getItem('theme') === 'dark');
@@ -500,7 +513,7 @@ const Dashboard = () => {
   // Fetch songs & playlists for the Home view
   useEffect(() => {
     const role = user?.role?.toLowerCase();
-    if (role === 'listener' || role === 'artist') {
+    if (role === 'listener' || role === 'artist' || role === 'admin' || role === 'superadmin') {
       api.get('/listener/feed')
         .then(res => {
           const songs = res.data.feed || [];
@@ -568,7 +581,9 @@ const Dashboard = () => {
     audio.play();
     setCurrentTrack(song);
     setIsPlaying(true);
-  }, [currentTrack, isPlaying, volume]);
+    // Record to listening history
+    dispatch(addToHistory(song.id));
+  }, [currentTrack, isPlaying, volume, dispatch]);
 
   const handleAddToPlaylistClick = (track, e) => {
     e.stopPropagation();
@@ -803,7 +818,10 @@ const Dashboard = () => {
                 </div>
                 <div className="track-card-info">
                   <div className="track-card-title">{track.title}</div>
-                  <div className="track-card-artist">{track.artist_name || track.artist || 'Unknown'}</div>
+                  <div className="track-card-artist" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    {track.artist_name || track.artist || 'Unknown'}
+                    {track.is_verified && <CheckCircle size={12} color="#10B981" />}
+                  </div>
                   <div className="track-card-duration">{track.category_name || track.duration || ''}</div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -832,7 +850,10 @@ const Dashboard = () => {
                 <div className="mix-card-body">
                   <div>
                     <div className="mix-card-title">{track.title}</div>
-                    <div className="mix-card-desc">By {track.artist_name || 'Unknown Artist'}</div>
+                    <div className="mix-card-desc" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      By {track.artist_name || 'Unknown Artist'}
+                      {track.is_verified && <CheckCircle size={12} color="#10B981" />}
+                    </div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button className="mix-card-play" style={{ background: 'var(--bg-elevated)', border: '1px solid rgba(255,255,255,0.1)' }} title="Add to Playlist" onClick={(e) => handleAddToPlaylistClick(track, e)}>
@@ -863,6 +884,7 @@ const Dashboard = () => {
     if (activeView === 'albums') return <AlbumsPanel onPlayTrack={handlePlayTrack} currentTrack={currentTrack} />;
     if (activeView === 'artists') return <ArtistsPanel homeFeed={homeFeed} onPlayTrack={handlePlayTrack} currentTrack={currentTrack} />;
     if (activeView === 'playlists') return <PlaylistsPanel onPlayTrack={handlePlayTrack} currentTrack={currentTrack} />;
+    if (activeView === 'catalog' && (role === 'admin' || role === 'superadmin')) return <CatalogPanel />;
 
     switch(role) {
       case 'superadmin':
@@ -967,9 +989,16 @@ const Dashboard = () => {
             </button>
           </li>
           {roleNavLabel && (
-            <li className={`sidebar-nav-item ${(activeView !== 'home' && activeView !== 'manage_admins') ? 'active' : ''}`}>
+            <li className={`sidebar-nav-item ${(activeView !== 'home' && activeView !== 'manage_admins' && activeView !== 'catalog') ? 'active' : ''}`}>
               <button onClick={() => setActiveView(user.role?.toLowerCase() || 'home')}>
                 <SlidersHorizontal size={20} /> {roleNavLabel}
+              </button>
+            </li>
+          )}
+          {(roleLower === 'admin' || roleLower === 'superadmin') && (
+            <li className={`sidebar-nav-item ${activeView === 'catalog' ? 'active' : ''}`}>
+              <button onClick={() => setActiveView('catalog')}>
+                <Disc3 size={20} /> Catalog
               </button>
             </li>
           )}
