@@ -6,11 +6,11 @@ import {
   TableHead, TableRow, Paper, Select, MenuItem, InputLabel, FormControl, 
   Avatar, Snackbar, Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions 
 } from '@mui/material';
-import { Music, Image as ImageIcon, UploadCloud, Trash2, Eye, EyeOff, X } from 'lucide-react';
+import { Music, Image as ImageIcon, UploadCloud, Trash2, Eye, EyeOff, X, Heart, Play } from 'lucide-react';
 import { 
   fetchProfile, updateProfile, fetchAlbums, createAlbum, 
   fetchSongs, publishSong, deleteSong, fetchCategories, clearMessages,
-  updateAlbumStatus, deleteAlbum 
+  updateAlbumStatus, deleteAlbum, updateSongStatus
 } from '../../store/slices/artistSlice';
 
 // A simple TabPanel component
@@ -313,43 +313,55 @@ const ArtistPanel = () => {
                         fontSize: '0.7rem', 
                         fontWeight: 'bold',
                         textTransform: 'uppercase',
-                        backgroundColor: album.status === 'published' ? '#10B981' : '#F59E0B',
+                        backgroundColor: album.status === 'published' ? '#10B981' : 
+                                         album.status === 'pending_review' ? '#3B82F6' : 
+                                         album.status === 'scheduled' ? '#8B5CF6' :
+                                         album.status === 'archived' ? '#6B7280' : '#F59E0B',
                         color: '#fff'
                       }}>
-                        {album.status || 'draft'}
+                        {album.status?.replace('_', ' ') || 'draft'}
                       </span>
                     </Box>
                   </Box>
                   <CardContent sx={{ flexGrow: 1 }}>
                     <Typography variant="h6">{album.title}</Typography>
                     <Typography variant="body2" color="var(--text-muted)">{new Date(album.release_date).toLocaleDateString()}</Typography>
+                    {album.rejection_reason && (
+                      <Alert severity="error" sx={{ mt: 1, p: 0.5, fontSize: '0.75rem' }}>
+                        Rejected: {album.rejection_reason}
+                      </Alert>
+                    )}
                   </CardContent>
-                  <Box sx={{ p: 2, pt: 0, display: 'flex', gap: 1 }}>
-                    {album.status === 'published' ? (
+                  <Box sx={{ p: 2, pt: 0, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    {album.status === 'draft' && (
                       <Button 
-                        size="small" 
-                        variant="outlined" 
-                        color="warning" 
-                        fullWidth
+                        size="small" variant="contained" color="primary" fullWidth
+                        onClick={() => dispatch(updateAlbumStatus({ albumId: album.id, status: 'pending_review' }))}
+                      >
+                        Submit for Review
+                      </Button>
+                    )}
+                    {album.status === 'published' && (
+                      <Button 
+                        size="small" variant="outlined" color="warning" fullWidth
+                        onClick={() => dispatch(updateAlbumStatus({ albumId: album.id, status: 'archived' }))}
+                      >
+                        Archive
+                      </Button>
+                    )}
+                    {album.status === 'archived' && (
+                      <Button 
+                        size="small" variant="outlined" color="primary" fullWidth
                         onClick={() => dispatch(updateAlbumStatus({ albumId: album.id, status: 'draft' }))}
                       >
-                        Unpublish
-                      </Button>
-                    ) : (
-                      <Button 
-                        size="small" 
-                        variant="contained" 
-                        color="primary" 
-                        fullWidth
-                        onClick={() => dispatch(updateAlbumStatus({ albumId: album.id, status: 'published' }))}
-                      >
-                        Publish
+                        Unarchive
                       </Button>
                     )}
                     <Button 
                       size="small" 
                       variant="outlined" 
                       color="error"
+                      fullWidth
                       onClick={() => setConfirmDialog({ open: true, type: 'album', id: album.id, title: album.title })}
                     >
                       Delete
@@ -440,32 +452,82 @@ const ArtistPanel = () => {
                   <TableCell sx={{ color: 'var(--text-muted)' }}>Title</TableCell>
                   <TableCell sx={{ color: 'var(--text-muted)' }}>Category</TableCell>
                   <TableCell sx={{ color: 'var(--text-muted)' }}>Album</TableCell>
+                  <TableCell sx={{ color: 'var(--text-muted)' }}>Likes</TableCell>
+                  <TableCell sx={{ color: 'var(--text-muted)' }}>Plays</TableCell>
                   <TableCell sx={{ color: 'var(--text-muted)' }}>Preview</TableCell>
+                  <TableCell sx={{ color: 'var(--text-muted)' }}>Status</TableCell>
                   <TableCell sx={{ color: 'var(--text-muted)' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {songs.map(song => (
                   <TableRow key={song.id}>
-                    <TableCell sx={{ color: 'var(--text-main)', fontWeight: 500 }}>{song.title}</TableCell>
+                    <TableCell sx={{ color: 'var(--text-main)', fontWeight: 500 }}>
+                      {song.title}
+                      {song.rejection_reason && (
+                        <Typography variant="caption" display="block" color="error">Rejected: {song.rejection_reason}</Typography>
+                      )}
+                    </TableCell>
                     <TableCell sx={{ color: 'var(--text-main)' }}>{song.Category?.name}</TableCell>
                     <TableCell sx={{ color: 'var(--text-main)' }}>{song.Album?.title || 'Single'}</TableCell>
+                    <TableCell sx={{ color: 'var(--text-main)' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <Heart size={14} fill="var(--text-muted)" color="var(--text-muted)" />
+                        {song.likes_count || 0}
+                      </span>
+                    </TableCell>
+                    <TableCell sx={{ color: 'var(--text-main)' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <Play size={14} fill="var(--text-muted)" color="var(--text-muted)" />
+                        {song.play_count || 0}
+                      </span>
+                    </TableCell>
                     <TableCell>
                       {song.audio_url && (
                         <audio controls src={`http://localhost:3001${song.audio_url}`} style={{ height: '32px' }} />
                       )}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="outlined"
-                        color="error"
+                      <Chip 
+                        label={song.status?.replace('_', ' ') || 'draft'} 
                         size="small"
-                        startIcon={<Trash2 size={14} />}
-                        onClick={() => setConfirmDialog({ open: true, type: 'song', id: song.id, title: song.title })}
-                        sx={{ textTransform: 'none' }}
-                      >
-                        Delete
-                      </Button>
+                        sx={{ 
+                          bgcolor: song.status === 'published' ? '#10B981' : 
+                                   song.status === 'pending_review' ? '#3B82F6' : 
+                                   song.status === 'scheduled' ? '#8B5CF6' :
+                                   song.status === 'archived' ? '#6B7280' : '#F59E0B',
+                          color: '#fff',
+                          textTransform: 'capitalize'
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        {song.status === 'draft' && (
+                          <Button size="small" variant="contained" color="primary" sx={{ textTransform: 'none' }} onClick={() => dispatch(updateSongStatus({ songId: song.id, status: 'pending_review' }))}>
+                            Submit
+                          </Button>
+                        )}
+                        {song.status === 'published' && (
+                          <Button size="small" variant="outlined" color="warning" sx={{ textTransform: 'none' }} onClick={() => dispatch(updateSongStatus({ songId: song.id, status: 'archived' }))}>
+                            Archive
+                          </Button>
+                        )}
+                        {song.status === 'archived' && (
+                          <Button size="small" variant="outlined" color="primary" sx={{ textTransform: 'none' }} onClick={() => dispatch(updateSongStatus({ songId: song.id, status: 'draft' }))}>
+                            Unarchive
+                          </Button>
+                        )}
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => setConfirmDialog({ open: true, type: 'song', id: song.id, title: song.title })}
+                          sx={{ minWidth: '40px', padding: '4px' }}
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}

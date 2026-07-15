@@ -209,7 +209,7 @@ const LibraryPanel = ({ onPlayTrack, currentTrack }) => {
                   return (
                     <TableRow key={`${song.id}-${index}`} hover sx={{ '& td': { borderBottom: '1px solid rgba(255,255,255,0.05)' } }}>
                       <TableCell sx={{ color: 'var(--text-main)' }}>{index + 1}</TableCell>
-                      <TableCell sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <TableCell sx={{ display: 'flex', alignItems: 'center', gap: 2 }}> 
                         <div className="table-cover">
                           {song.cover_url ? (
                             <img src={`http://localhost:3001${song.cover_url}`} alt={song.title} />

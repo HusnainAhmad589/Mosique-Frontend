@@ -103,9 +103,29 @@ export const deleteAlbum = createAsyncThunk('artist/deleteAlbum', async (albumId
 export const updateAlbumStatus = createAsyncThunk('artist/updateAlbumStatus', async ({ albumId, status }, { rejectWithValue }) => {
   try {
     const res = await api.put(`/artist/albums/${albumId}/status`, { status });
-    return res.data.album; // Assuming backend returns the updated album
+    return res.data.album;
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || 'Failed to update album status');
+  }
+});
+
+// Update song status
+export const updateSongStatus = createAsyncThunk('artist/updateSongStatus', async ({ songId, status }, { rejectWithValue }) => {
+  try {
+    const res = await api.put(`/artist/songs/${songId}/status`, { status });
+    return res.data.song;
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to update song status');
+  }
+});
+
+// Fetch content by status
+export const fetchContentByStatus = createAsyncThunk('artist/fetchContentByStatus', async (status, { rejectWithValue }) => {
+  try {
+    const res = await api.get(`/artist/content?status=${status}`);
+    return { status, songs: res.data.songs, albums: res.data.albums };
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to fetch content');
   }
 });
 
@@ -196,6 +216,24 @@ const artistSlice = createSlice({
         if (index !== -1) {
           state.albums[index] = action.payload;
         }
+      })
+      // Update Song Status
+      .addCase(updateSongStatus.fulfilled, (state, action) => {
+        const index = state.songs.findIndex(s => s.id === action.payload.id);
+        if (index !== -1) {
+          state.songs[index] = action.payload;
+        }
+      })
+      // Fetch Content By Status
+      .addCase(fetchContentByStatus.pending, (state) => { state.loading = true; })
+      .addCase(fetchContentByStatus.fulfilled, (state, action) => {
+        state.loading = false;
+        state.songs = action.payload.songs;
+        state.albums = action.payload.albums;
+      })
+      .addCase(fetchContentByStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });

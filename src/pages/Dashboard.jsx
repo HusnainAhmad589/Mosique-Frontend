@@ -28,6 +28,7 @@ const ListenerPanel = ({ onPlayTrack, currentTrack }) => {
   const [feed, setFeed] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [likedSongIds, setLikedSongIds] = useState(new Set());
   
   const fetchFeed = async (search = '') => {
     setLoading(true);
@@ -42,9 +43,39 @@ const ListenerPanel = ({ onPlayTrack, currentTrack }) => {
     }
   };
 
+  // Fetch the user's liked song IDs on mount
   useEffect(() => {
     fetchFeed();
+    api.get('/listener/favorites')
+      .then(res => {
+        if (res.data.success) {
+          const ids = new Set(res.data.favorites.map(f => f.id));
+          setLikedSongIds(ids);
+        }
+      })
+      .catch(err => console.error('Error fetching favorites:', err));
   }, []);
+
+  const handleToggleLike = async (e, song) => {
+    e.stopPropagation();
+    const isLiked = likedSongIds.has(song.id);
+    
+    try {
+      if (isLiked) {
+        await api.delete(`/listener/favorites/${song.id}`);
+        setLikedSongIds(prev => { const next = new Set(prev); next.delete(song.id); return next; });
+        setFeed(prev => prev.map(s => s.id === song.id ? { ...s, likes_count: Math.max(0, (s.likes_count || 0) - 1) } : s));
+        setToast({ open: true, message: 'Removed from Liked Songs!', severity: 'success' });
+      } else {
+        await api.post('/listener/favorites', { trackId: song.id });
+        setLikedSongIds(prev => new Set(prev).add(song.id));
+        setFeed(prev => prev.map(s => s.id === song.id ? { ...s, likes_count: (s.likes_count || 0) + 1 } : s));
+        setToast({ open: true, message: 'Added to Liked Songs!', severity: 'success' });
+      }
+    } catch (err) {
+      setToast({ open: true, message: err.response?.data?.message || 'Error updating favorites', severity: 'error' });
+    }
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -89,12 +120,13 @@ const ListenerPanel = ({ onPlayTrack, currentTrack }) => {
                   <TableCell sx={{ fontWeight: 600, color: 'var(--text-muted)' }}>Artist</TableCell>
                   <TableCell sx={{ fontWeight: 600, color: 'var(--text-muted)' }}>Genre</TableCell>
                   <TableCell sx={{ fontWeight: 600, color: 'var(--text-muted)' }}>Album</TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: 'var(--text-muted)', width: '60px' }}></TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: 'var(--text-muted)', width: '120px' }}></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {feed.map((song, idx) => {
                   const isActive = currentTrack?.id === song.id;
+                  const isLiked = likedSongIds.has(song.id);
                   return (
                     <TableRow 
                       key={song.id} 
@@ -128,19 +160,16 @@ const ListenerPanel = ({ onPlayTrack, currentTrack }) => {
                       </TableCell>
                       <TableCell sx={{ color: 'var(--text-muted)' }}>{song.album_title || '—'}</TableCell>
                       <TableCell>
-                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end', alignItems: 'center' }}>
                           <IconButton 
-                            onClick={(e) => { 
-                              e.stopPropagation(); 
-                              api.post('/listener/favorites', { trackId: song.id })
-                                .then(() => setToast({ open: true, message: 'Added to Liked Songs!', severity: 'success' }))
-                                .catch(err => setToast({ open: true, message: err.response?.data?.message || 'Error adding to favorites', severity: 'error' }));
-                            }}
-                            title="Add to Liked Songs"
-                            sx={{ color: 'var(--text-muted)', '&:hover': { color: 'var(--primary)' } }}
+                            onClick={(e) => handleToggleLike(e, song)}
+                            title={isLiked ? 'Remove from Liked Songs' : 'Add to Liked Songs'}
+                            sx={{ color: isLiked ? '#ef4444' : 'var(--text-muted)', '&:hover': { color: isLiked ? '#dc2626' : '#ef4444' }, transition: 'color 0.2s' }}
+                            size="small"
                           >
-                            <Heart size={20} />
+                            <Heart size={18} fill={isLiked ? '#ef4444' : 'none'} />
                           </IconButton>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', minWidth: '18px' }}>{song.likes_count || 0}</span>
                           <button 
                             className="track-card-play" 
                             onClick={(e) => { e.stopPropagation(); onPlayTrack(song); }}
@@ -161,6 +190,7 @@ const ListenerPanel = ({ onPlayTrack, currentTrack }) => {
     </div>
   );
 };
+
 
 // --- Dashboard Stats Panel ---
 const DashboardStatsPanel = () => {
@@ -229,8 +259,8 @@ const DashboardStatsPanel = () => {
                             {u.username?.[0]?.toUpperCase()}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 500, color: '#333' }}>{u.username}</div>
-                            <div style={{ fontSize: '0.8rem', color: '#888' }}>{u.email}</div>
+                            <div style={{ fontWeight: 500, color: 'var(--text-main)' }}>{u.username}</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{u.email}</div>
                           </div>
                         </div>
                       </TableCell>
@@ -257,7 +287,7 @@ const DashboardStatsPanel = () => {
                           </span>
                         )}
                       </TableCell>
-                      <TableCell sx={{ color: '#666' }}>
+                      <TableCell sx={{ color: 'var(--text-secondary)' }}>
                         {new Date(u.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                       </TableCell>
                     </TableRow>
@@ -489,6 +519,7 @@ const Dashboard = () => {
 
   // --- Audio Player State ---
   const audioRef = useRef(new Audio());
+  const playTrackedRef = useRef(false);
   const [currentTrack, setCurrentTrack] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -547,7 +578,14 @@ const Dashboard = () => {
   // Audio event listeners
   useEffect(() => {
     const audio = audioRef.current;
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const onTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+      // Track play if listening for > 10 seconds and haven't tracked yet
+      if (audio.currentTime > 10 && !playTrackedRef.current && currentTrack) {
+        playTrackedRef.current = true;
+        api.post(`/listener/play/${currentTrack.id}`).catch(err => console.error('Error recording play', err));
+      }
+    };
     const onLoadedMetadata = () => setDuration(audio.duration);
     const onEnded = () => handleSkipForward();
 
@@ -576,6 +614,7 @@ const Dashboard = () => {
       return;
     }
     // New track
+    playTrackedRef.current = false;
     audio.src = `http://localhost:3001${song.audio_url}`;
     audio.volume = volume;
     audio.play();
