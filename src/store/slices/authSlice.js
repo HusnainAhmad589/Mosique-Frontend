@@ -70,7 +70,8 @@ const authSlice = createSlice({
   initialState: {
     user: null,
     isAuthenticated: false,
-    loading: true, // true on startup while checking token
+    loading: true, // true only during initial checkAuth on app startup
+    actionLoading: false, // true during login / register actions
     error: null,
   },
   reducers: {
@@ -101,35 +102,35 @@ const authSlice = createSlice({
         state.loading = false;
       });
 
-    // loginUser
+    // loginUser — use actionLoading so the global loading gate doesn't unmount children
     builder
       .addCase(loginUser.pending, (state) => {
-        state.loading = true;
+        state.actionLoading = true;
         state.error = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.user = action.payload.user;
         state.isAuthenticated = true;
-        state.loading = false;
+        state.actionLoading = false;
       })
       .addCase(loginUser.rejected, (state, action) => {
-        state.loading = false;
+        state.actionLoading = false;
         state.error = action.payload;
       });
 
-    // registerUser
+    // registerUser — use actionLoading so the global loading gate doesn't unmount children
     builder
       .addCase(registerUser.pending, (state) => {
-        state.loading = true;
+        state.actionLoading = true;
         state.error = null;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.user = action.payload.user;
         state.isAuthenticated = true;
-        state.loading = false;
+        state.actionLoading = false;
       })
       .addCase(registerUser.rejected, (state, action) => {
-        state.loading = false;
+        state.actionLoading = false;
         state.error = action.payload;
       });
 
