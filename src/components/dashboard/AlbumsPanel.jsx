@@ -9,6 +9,7 @@ import {
   IconButton 
 } from '@mui/material';
 import { Play, Music, ArrowLeft, Disc3 } from 'lucide-react';
+import api from '../../api';
 
 const AlbumsPanel = ({ onPlayTrack, currentTrack }) => {
   const [albums, setAlbums] = useState([]);
@@ -23,14 +24,9 @@ const AlbumsPanel = ({ onPlayTrack, currentTrack }) => {
 
   const fetchAlbums = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/listener/albums', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('mosique_token')}`
-        }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setAlbums(data.albums || []);
+      const res = await api.get('/listener/albums');
+      if (res.data.success) {
+        setAlbums(res.data.albums || []);
       }
     } catch (err) {
       console.error('Failed to fetch albums', err);
@@ -42,14 +38,9 @@ const AlbumsPanel = ({ onPlayTrack, currentTrack }) => {
   const fetchAlbumTracks = async (albumId) => {
     setTracksLoading(true);
     try {
-      const res = await fetch(`http://localhost:3001/api/listener/feed?albumId=${albumId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('mosique_token')}`
-        }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setAlbumTracks(data.feed || []);
+      const res = await api.get(`/listener/feed?albumId=${albumId}`);
+      if (res.data.success) {
+        setAlbumTracks(res.data.feed || []);
       }
     } catch (err) {
       console.error('Failed to fetch album tracks', err);

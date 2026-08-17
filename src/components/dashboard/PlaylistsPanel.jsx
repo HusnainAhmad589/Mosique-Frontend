@@ -5,6 +5,8 @@ import {
 } from '@mui/material';
 import { Play, Music, ArrowLeft, ListMusic, Trash2 } from 'lucide-react';
 
+import api from '../../api';
+
 const PlaylistsPanel = ({ onPlayTrack, currentTrack }) => {
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,12 +20,9 @@ const PlaylistsPanel = ({ onPlayTrack, currentTrack }) => {
 
   const fetchPlaylists = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/listener/playlists', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('mosique_token')}` }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setPlaylists(data.playlists || []);
+      const res = await api.get('/listener/playlists');
+      if (res.data.success) {
+        setPlaylists(res.data.playlists || []);
       }
     } catch (err) {
       console.error('Failed to fetch playlists', err);
@@ -43,17 +42,13 @@ const PlaylistsPanel = ({ onPlayTrack, currentTrack }) => {
   const handleDeletePlaylist = async () => {
     setConfirmDialog({ open: false, playlistId: null, playlistName: '' });
     try {
-      const res = await fetch(`http://localhost:3001/api/listener/playlists/${confirmDialog.playlistId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('mosique_token')}` }
-      });
-      const data = await res.json();
-      if (data.success) {
+      const res = await api.delete(`/listener/playlists/${confirmDialog.playlistId}`);
+      if (res.data.success) {
         if (selectedPlaylist?.id === confirmDialog.playlistId) setSelectedPlaylist(null);
         fetchPlaylists();
         setToast({ open: true, message: 'Playlist deleted successfully', severity: 'success' });
       } else {
-        setToast({ open: true, message: data.message || 'Failed to delete playlist', severity: 'error' });
+        setToast({ open: true, message: res.data.message || 'Failed to delete playlist', severity: 'error' });
       }
     } catch (err) {
       console.error(err);

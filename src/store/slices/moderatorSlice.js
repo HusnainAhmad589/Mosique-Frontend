@@ -1,76 +1,51 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import api from '../../api';
 
 export const fetchReports = createAsyncThunk('moderator/fetchReports', async (_, thunkAPI) => {
   try {
-    const res = await fetch('http://localhost:3001/api/moderator/reports', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('mosique_token')}`
-      }
-    });
-    const data = await res.json();
-    if (data.success) {
-      return data.reports;
+    const res = await api.get('/moderator/reports');
+    if (res.data.success) {
+      return res.data.reports;
     }
-    return thunkAPI.rejectWithValue(data.message);
+    return thunkAPI.rejectWithValue(res.data.message);
   } catch (err) {
-    return thunkAPI.rejectWithValue('Network error');
+    return thunkAPI.rejectWithValue(err.response?.data?.message || 'Network error');
   }
 });
 
 export const resolveReport = createAsyncThunk('moderator/resolveReport', async ({ reportId, action }, thunkAPI) => {
   try {
-    const res = await fetch(`http://localhost:3001/api/moderator/reports/${reportId}/resolve`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('mosique_token')}`
-      },
-      body: JSON.stringify({ action })
-    });
-    const data = await res.json();
-    if (data.success) {
-      return { reportId, status: action === 'approve' ? 'resolved' : 'dismissed', message: data.message };
+    const res = await api.put(`/moderator/reports/${reportId}/resolve`, { action });
+    if (res.data.success) {
+      return { reportId, status: action === 'approve' ? 'resolved' : 'dismissed', message: res.data.message };
     }
-    return thunkAPI.rejectWithValue(data.message);
+    return thunkAPI.rejectWithValue(res.data.message);
   } catch (err) {
-    return thunkAPI.rejectWithValue('Network error');
+    return thunkAPI.rejectWithValue(err.response?.data?.message || 'Network error');
   }
 });
 
 export const fetchPendingContent = createAsyncThunk('moderator/fetchPendingContent', async (_, thunkAPI) => {
   try {
-    const res = await fetch('http://localhost:3001/api/moderator/pending-content', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('mosique_token')}`
-      }
-    });
-    const data = await res.json();
-    if (data.success) {
-      return data.pending;
+    const res = await api.get('/moderator/pending-content');
+    if (res.data.success) {
+      return res.data.pending;
     }
-    return thunkAPI.rejectWithValue(data.message);
+    return thunkAPI.rejectWithValue(res.data.message);
   } catch (err) {
-    return thunkAPI.rejectWithValue('Network error');
+    return thunkAPI.rejectWithValue(err.response?.data?.message || 'Network error');
   }
 });
 
 export const reviewContent = createAsyncThunk('moderator/reviewContent', async ({ type, id, action, reason }, thunkAPI) => {
   try {
-    const res = await fetch(`http://localhost:3001/api/moderator/review/${type}/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('mosique_token')}`
-      },
-      body: JSON.stringify({ action, reason })
-    });
-    const data = await res.json();
-    if (data.success) {
-      return { type, id, status: action === 'approve' ? 'published' : 'draft', message: data.message };
+    const res = await api.put(`/moderator/review/${type}/${id}`, { action, reason });
+    if (res.data.success) {
+      return { type, id, status: action === 'approve' ? 'published' : 'draft', message: res.data.message };
     }
-    return thunkAPI.rejectWithValue(data.message);
+    return thunkAPI.rejectWithValue(res.data.message);
   } catch (err) {
-    return thunkAPI.rejectWithValue('Network error');
+    return thunkAPI.rejectWithValue(err.response?.data?.message || 'Network error');
   }
 });
 

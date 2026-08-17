@@ -1,123 +1,83 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import api from '../../api';
 
 export const fetchFavorites = createAsyncThunk('library/fetchFavorites', async (_, thunkAPI) => {
   try {
-    const res = await fetch('http://localhost:3001/api/listener/favorites', {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('mosique_token')}` }
-    });
-    const data = await res.json();
-    if (data.success) return data.favorites;
-    return thunkAPI.rejectWithValue(data.message);
+    const res = await api.get('/listener/favorites');
+    if (res.data.success) return res.data.favorites;
+    return thunkAPI.rejectWithValue(res.data.message);
   } catch (err) {
-    return thunkAPI.rejectWithValue('Network error');
+    return thunkAPI.rejectWithValue(err.response?.data?.message || 'Network error');
   }
 });
 
 export const addFavorite = createAsyncThunk('library/addFavorite', async (trackId, thunkAPI) => {
   try {
-    const res = await fetch('http://localhost:3001/api/listener/favorites', {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${localStorage.getItem('mosique_token')}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ trackId })
-    });
-    const data = await res.json();
-    if (data.success) return { trackId, message: data.message };
-    return thunkAPI.rejectWithValue(data.message);
+    const res = await api.post('/listener/favorites', { trackId });
+    if (res.data.success) return { trackId, message: res.data.message };
+    return thunkAPI.rejectWithValue(res.data.message);
   } catch (err) {
-    return thunkAPI.rejectWithValue('Network error');
+    return thunkAPI.rejectWithValue(err.response?.data?.message || 'Network error');
   }
 });
 
 export const removeFavorite = createAsyncThunk('library/removeFavorite', async (trackId, thunkAPI) => {
   try {
-    const res = await fetch(`http://localhost:3001/api/listener/favorites/${trackId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('mosique_token')}` }
-    });
-    const data = await res.json();
-    if (data.success) return { trackId, message: data.message };
-    return thunkAPI.rejectWithValue(data.message);
+    const res = await api.delete(`/listener/favorites/${trackId}`);
+    if (res.data.success) return { trackId, message: res.data.message };
+    return thunkAPI.rejectWithValue(res.data.message);
   } catch (err) {
-    return thunkAPI.rejectWithValue('Network error');
+    return thunkAPI.rejectWithValue(err.response?.data?.message || 'Network error');
   }
 });
 
 export const fetchSavedAlbums = createAsyncThunk('library/fetchSavedAlbums', async (_, thunkAPI) => {
   try {
-    const res = await fetch('http://localhost:3001/api/listener/saved-albums', {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('mosique_token')}` }
-    });
-    const data = await res.json();
-    if (data.success) return data.albums;
-    return thunkAPI.rejectWithValue(data.message);
+    const res = await api.get('/listener/saved-albums');
+    if (res.data.success) return res.data.albums;
+    return thunkAPI.rejectWithValue(res.data.message);
   } catch (err) {
-    return thunkAPI.rejectWithValue('Network error');
+    return thunkAPI.rejectWithValue(err.response?.data?.message || 'Network error');
   }
 });
 
 export const saveAlbum = createAsyncThunk('library/saveAlbum', async (albumId, thunkAPI) => {
   try {
-    const res = await fetch('http://localhost:3001/api/listener/saved-albums', {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${localStorage.getItem('mosique_token')}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ albumId })
-    });
-    const data = await res.json();
-    if (data.success) return { albumId, message: data.message };
-    return thunkAPI.rejectWithValue(data.message);
+    const res = await api.post('/listener/saved-albums', { albumId });
+    if (res.data.success) return { albumId, message: res.data.message };
+    return thunkAPI.rejectWithValue(res.data.message);
   } catch (err) {
-    return thunkAPI.rejectWithValue('Network error');
+    return thunkAPI.rejectWithValue(err.response?.data?.message || 'Network error');
   }
 });
 
 export const removeSavedAlbum = createAsyncThunk('library/removeSavedAlbum', async (albumId, thunkAPI) => {
   try {
-    const res = await fetch(`http://localhost:3001/api/listener/saved-albums/${albumId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('mosique_token')}` }
-    });
-    const data = await res.json();
-    if (data.success) return { albumId, message: data.message };
-    return thunkAPI.rejectWithValue(data.message);
+    const res = await api.delete(`/listener/saved-albums/${albumId}`);
+    if (res.data.success) return { albumId, message: res.data.message };
+    return thunkAPI.rejectWithValue(res.data.message);
   } catch (err) {
-    return thunkAPI.rejectWithValue('Network error');
+    return thunkAPI.rejectWithValue(err.response?.data?.message || 'Network error');
   }
 });
 
 export const fetchHistory = createAsyncThunk('library/fetchHistory', async (_, thunkAPI) => {
   try {
-    const res = await fetch('http://localhost:3001/api/listener/history', {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('mosique_token')}` }
-    });
-    const data = await res.json();
-    if (data.success) return data.history;
-    return thunkAPI.rejectWithValue(data.message);
+    const res = await api.get('/listener/history');
+    if (res.data.success) return res.data.history;
+    return thunkAPI.rejectWithValue(res.data.message);
   } catch (err) {
-    return thunkAPI.rejectWithValue('Network error');
+    return thunkAPI.rejectWithValue(err.response?.data?.message || 'Network error');
   }
 });
 
 export const addToHistory = createAsyncThunk('library/addToHistory', async (songId, thunkAPI) => {
   try {
-    const res = await fetch('http://localhost:3001/api/listener/history', {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${localStorage.getItem('mosique_token')}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ songId })
-    });
-    const data = await res.json();
-    if (data.success) return { songId };
-    return thunkAPI.rejectWithValue(data.message);
+    const res = await api.post('/listener/history', { songId });
+    if (res.data.success) return { songId };
+    return thunkAPI.rejectWithValue(res.data.message);
   } catch (err) {
-    return thunkAPI.rejectWithValue('Network error');
+    return thunkAPI.rejectWithValue(err.response?.data?.message || 'Network error');
   }
 });
 

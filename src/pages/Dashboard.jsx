@@ -553,14 +553,11 @@ const Dashboard = () => {
         })
         .catch(err => console.error(err));
         
-      fetch('http://localhost:3001/api/listener/playlists', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('mosique_token')}` }
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) setUserPlaylists(data.playlists || []);
-      })
-      .catch(console.error);
+      api.get('/listener/playlists')
+        .then(res => {
+          if (res.data.success) setUserPlaylists(res.data.playlists || []);
+        })
+        .catch(console.error);
     }
   }, [user?.role]);
 
@@ -639,30 +636,19 @@ const Dashboard = () => {
     if (!name || !name.trim() || !track) return;
     
     try {
-      const res = await fetch('http://localhost:3001/api/listener/playlists', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('mosique_token')}`
-        },
-        body: JSON.stringify({ name: name.trim(), songId: track.id })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setToast({ open: true, message: data.message, severity: 'success' });
+      const res = await api.post('/listener/playlists', { name: name.trim(), songId: track.id });
+      if (res.data.success) {
+        setToast({ open: true, message: res.data.message, severity: 'success' });
         // Refresh playlists in background
-        fetch('http://localhost:3001/api/listener/playlists', {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('mosique_token')}` }
-        })
-        .then(r => r.json())
-        .then(d => { if (d.success) setUserPlaylists(d.playlists || []) })
-        .catch(console.error);
+        api.get('/listener/playlists')
+          .then(r => { if (r.data.success) setUserPlaylists(r.data.playlists || []) })
+          .catch(console.error);
       } else {
-        setToast({ open: true, message: data.message || 'Failed to add to playlist.', severity: 'error' });
+        setToast({ open: true, message: res.data.message || 'Failed to add to playlist.', severity: 'error' });
       }
     } catch (err) {
       console.error(err);
-      setToast({ open: true, message: 'Failed to add to playlist.', severity: 'error' });
+      setToast({ open: true, message: err.response?.data?.message || 'Failed to add to playlist.', severity: 'error' });
     }
   };
 

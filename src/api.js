@@ -5,8 +5,18 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  // This tells axios to send cookies with every request (required for HttpOnly cookies)
+  // Send cookies with every request (for HttpOnly cookies)
   withCredentials: true,
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('mosique_token');
+  if (token && token !== 'null' && token !== 'undefined') {
+    config.headers.Authorization = `Bearer ${token}`;
+  } else if (config.headers) {
+    delete config.headers.Authorization;
+  }
+  return config;
 });
 
 export default api;
