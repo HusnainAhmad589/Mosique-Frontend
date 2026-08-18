@@ -6,7 +6,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { 
   Music, LogOut, KeyRound, User as UserIcon, Home, Compass, Library, Disc3, 
   Users, ListMusic, Plus, Search, Bell, ChevronDown, Play, Heart,
-  Shuffle, SkipBack, SkipForward, Repeat, Pause, Volume2, SlidersHorizontal, Edit3, Moon, Sun, CheckCircle
+  Shuffle, SkipBack, SkipForward, Repeat, Pause, Volume2, SlidersHorizontal, Edit3, Moon, Sun, CheckCircle,
+  UserPlus, ShieldCheck
 } from 'lucide-react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Select, MenuItem, Snackbar, Alert, CircularProgress, Box, Button, Grid, Card, CardContent, Divider, Switch, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, ThemeProvider, createTheme, Menu, Tooltip } from '@mui/material';
 import api from '../api';
@@ -21,6 +22,7 @@ import ArtistsPanel from '../components/dashboard/ArtistsPanel';
 import ModeratorPanel from '../components/dashboard/ModeratorPanel';
 import LibraryPanel from '../components/dashboard/LibraryPanel';
 import CatalogPanel from '../components/dashboard/CatalogPanel';
+import AddModeratorPanel from '../components/dashboard/AddModeratorPanel';
 import NotificationBell from '../components/common/NotificationBell';
 
 // --- Listener Panel ---
@@ -910,6 +912,7 @@ const Dashboard = () => {
     if (activeView === 'artists') return <ArtistsPanel homeFeed={homeFeed} onPlayTrack={handlePlayTrack} currentTrack={currentTrack} />;
     if (activeView === 'playlists') return <PlaylistsPanel onPlayTrack={handlePlayTrack} currentTrack={currentTrack} />;
     if (activeView === 'catalog' && (role === 'admin' || role === 'superadmin')) return <CatalogPanel />;
+    if (activeView === 'add_moderator' && role === 'artist') return <AddModeratorPanel />;
 
     switch(role) {
       case 'superadmin':
@@ -1014,9 +1017,16 @@ const Dashboard = () => {
             </button>
           </li>
           {roleNavLabel && (
-            <li className={`sidebar-nav-item ${(activeView !== 'home' && activeView !== 'manage_admins' && activeView !== 'catalog') ? 'active' : ''}`}>
+            <li className={`sidebar-nav-item ${(activeView !== 'home' && activeView !== 'manage_admins' && activeView !== 'catalog' && activeView !== 'add_moderator' && activeView !== 'library' && activeView !== 'albums' && activeView !== 'artists' && activeView !== 'playlists') ? 'active' : ''}`}>
               <button onClick={() => setActiveView(user.role?.toLowerCase() || 'home')}>
                 <SlidersHorizontal size={20} /> {roleNavLabel}
+              </button>
+            </li>
+          )}
+          {roleLower === 'artist' && (
+            <li className={`sidebar-nav-item ${activeView === 'add_moderator' ? 'active' : ''}`}>
+              <button onClick={() => setActiveView('add_moderator')}>
+                <UserPlus size={20} /> Add Moderator
               </button>
             </li>
           )}

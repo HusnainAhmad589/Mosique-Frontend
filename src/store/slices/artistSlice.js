@@ -84,10 +84,39 @@ const initialState = {
   albums: [],
   songs: [],
   categories: [],
+  moderators: [],
   loading: false,
   error: null,
   successMessage: null,
 };
+
+export const fetchModerators = createAsyncThunk('artist/fetchModerators', async (_, { rejectWithValue }) => {
+  try {
+    const response = await api.get('/artist/moderators');
+    return response.data.moderators;
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to fetch moderators');
+  }
+});
+
+export const addModerator = createAsyncThunk('artist/addModerator', async (email, { rejectWithValue }) => {
+  try {
+    const response = await api.post('/artist/moderators', { email });
+    return response.data;
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to add moderator');
+  }
+});
+
+export const removeModerator = createAsyncThunk('artist/removeModerator', async (moderatorId, { rejectWithValue }) => {
+  try {
+    const response = await api.delete(`/artist/moderators/${moderatorId}`);
+    return { moderatorId, message: response.data.message };
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to remove moderator');
+  }
+});
+
 
 // Delete an album
 export const deleteAlbum = createAsyncThunk('artist/deleteAlbum', async (albumId, { rejectWithValue }) => {
@@ -232,6 +261,32 @@ const artistSlice = createSlice({
         state.albums = action.payload.albums;
       })
       .addCase(fetchContentByStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Fetch Personal Moderators
+      .addCase(fetchModerators.fulfilled, (state, action) => {
+        state.moderators = action.payload;
+      })
+      // Add Personal Moderator
+      .addCase(addModerator.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(addModerator.fulfilled, (state, action) => {
+        state.loading = false;
+        state.moderators.unshift(action.payload.moderator);
+        state.successMessage = action.payload.message;
+      })
+      .addCase(addModerator.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Remove Personal Moderator
+      .addCase(removeModerator.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(removeModerator.fulfilled, (state, action) => {
+        state.loading = false;
+        state.moderators = state.moderators.filter(m => m.id !== action.payload.moderatorId);
+        state.successMessage = action.payload.message;
+      })
+      .addCase(removeModerator.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
