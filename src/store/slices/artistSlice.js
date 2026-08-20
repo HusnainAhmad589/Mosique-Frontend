@@ -139,12 +139,32 @@ export const updateAlbumStatus = createAsyncThunk('artist/updateAlbumStatus', as
 });
 
 // Update song status
-export const updateSongStatus = createAsyncThunk('artist/updateSongStatus', async ({ songId, status }, { rejectWithValue }) => {
+export const updateSongStatus = createAsyncThunk('artist/updateSongStatus', async ({ songId, status, scheduled_at }, { rejectWithValue }) => {
   try {
-    const res = await api.put(`/artist/songs/${songId}/status`, { status });
+    const res = await api.put(`/artist/songs/${songId}/status`, { status, scheduled_at });
     return res.data.song;
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || 'Failed to update song status');
+  }
+});
+
+// AI Generate Lyrics
+export const generateLyrics = createAsyncThunk('artist/generateLyrics', async (songId, { rejectWithValue }) => {
+  try {
+    const res = await api.post(`/artist/songs/${songId}/generate-lyrics`);
+    return res.data;
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to generate AI lyrics');
+  }
+});
+
+// Update Song Lyrics
+export const updateSongLyrics = createAsyncThunk('artist/updateSongLyrics', async ({ songId, lyrics }, { rejectWithValue }) => {
+  try {
+    const res = await api.put(`/artist/songs/${songId}/lyrics`, { lyrics });
+    return res.data.song;
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Failed to update lyrics');
   }
 });
 
@@ -214,9 +234,46 @@ const artistSlice = createSlice({
       .addCase(publishSong.fulfilled, (state, action) => {
         state.loading = false;
         state.songs.unshift(action.payload);
-        state.successMessage = 'Song published successfully!';
+        state.successMessage = action.payload.status === 'scheduled' 
+          ? `Song scheduled to auto-release on ${new Date(action.payload.scheduled_at).toLocaleString()}`
+          : 'Song published successfully!';
       })
       .addCase(publishSong.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Generate Lyrics
+      .addCase(generateLyrics.pending, (state) => { state.loading = true; })
+      .addCase(generateLyrics.fulfilled, (state, action) => {
+        state.loading = false;
+        const songId = action.payload?.song?.id || action.payload?.songId;
+        if (songId) {
+          const index = state.songs.findIndex(s => s.id === songId);
+          if (index !== -1) {
+            if (action.payload.song) {
+              state.songs[index] = action.payload.song;
+            } else if (action.payload.lyrics_status) {
+              state.songs[index].lyrics_status = action.payload.lyrics_status;
+            }
+          }
+        }
+        state.successMessage = action.payload?.message || 'AI Lyrics generation queued!';
+      })
+      .addCase(generateLyrics.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Update Song Lyrics
+      .addCase(updateSongLyrics.pending, (state) => { state.loading = true; })
+      .addCase(updateSongLyrics.fulfilled, (state, action) => {
+        state.loading = false;
+        const index = state.songs.findIndex(s => s.id === action.payload.id);
+        if (index !== -1) {
+          state.songs[index] = action.payload;
+        }
+        state.successMessage = 'Lyrics updated successfully!';
+      })
+      .addCase(updateSongLyrics.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
