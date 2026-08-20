@@ -2,6 +2,8 @@ import { createContext, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { checkAuth, loginUser, registerUser, logoutUser, updateUserInfo } from '../store/slices/authSlice';
 
+import api from '../api';
+
 export const AuthContext = createContext();
 
 // AuthProvider is kept for backward compatibility but now delegates to Redux.
@@ -13,6 +15,17 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     dispatch(checkAuth());
   }, [dispatch]);
+
+  // Heartbeat interval to maintain active online presence in Redis
+  useEffect(() => {
+    if (!user) return;
+    // Ping immediately on login
+    api.post('/auth/heartbeat').catch(() => {});
+    const interval = setInterval(() => {
+      api.post('/auth/heartbeat').catch(() => {});
+    }, 25000); // 25s
+    return () => clearInterval(interval);
+  }, [user]);
 
   const login = async (email, password) => {
     const result = await dispatch(loginUser({ email, password }));

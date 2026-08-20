@@ -1,8 +1,9 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { UserPlus, Eye, EyeOff } from 'lucide-react';
+import { UserPlus, Eye, EyeOff, Moon, Sun } from 'lucide-react';
 import { DASHBOARD_URL, LOGIN_URL } from '../routes/route_constants';
+import { IconButton } from '@mui/material';
 import { useDispatch } from 'react-redux';
 import { showToast } from '../store/slices/notificationSlice';
 
@@ -12,6 +13,17 @@ const Register = () => {
   const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
   const initialRole = searchParams.get('role') || 'listener';
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -49,6 +61,20 @@ const Register = () => {
 
   return (
     <div className="auth-container">
+      <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }}>
+        <IconButton 
+          onClick={() => setDarkMode(!darkMode)} 
+          sx={{ 
+            color: 'var(--text-main)', 
+            bgcolor: 'var(--bg-card)', 
+            boxShadow: 'var(--shadow-md)',
+            '&:hover': { bgcolor: 'var(--bg-elevated)' } 
+          }}
+          title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+        </IconButton>
+      </div>
       <div className="auth-card" style={{ maxWidth: '500px' }}>
         <div className="auth-header">
           <h1><UserPlus size={32} color="var(--primary)" /> Join Mosique</h1>

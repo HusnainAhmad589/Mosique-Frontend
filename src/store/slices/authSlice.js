@@ -15,8 +15,10 @@ export const checkAuth = createAsyncThunk('auth/checkAuth', async (_, { rejectWi
     const res = await api.get('/auth/me');
     return res.data.user;
   } catch (err) {
-    localStorage.removeItem('mosique_token');
-    delete api.defaults.headers.common['Authorization'];
+    if (err.response?.status === 401) {
+      localStorage.removeItem('mosique_token');
+      delete api.defaults.headers.common['Authorization'];
+    }
     return rejectWithValue(err.response?.data?.message || 'Session expired');
   }
 });

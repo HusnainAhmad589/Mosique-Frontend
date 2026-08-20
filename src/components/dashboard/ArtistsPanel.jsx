@@ -196,28 +196,28 @@ const ArtistsPanel = ({ homeFeed, onPlayTrack, currentTrack }) => {
 
         {/* Stats Cards */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Card sx={{ bgcolor: 'var(--bg-elevated)', color: 'var(--text-main)', boxShadow: 'none', borderRadius: '12px', textAlign: 'center', p: 2 }}>
               <Users size={20} color="var(--primary)" style={{ marginBottom: '4px' }} />
               <Typography variant="h5" sx={{ fontWeight: 'bold' }}>{artistDetails.follower_count}</Typography>
               <Typography variant="caption" sx={{ color: 'var(--text-muted)' }}>Followers</Typography>
             </Card>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Card sx={{ bgcolor: 'var(--bg-elevated)', color: 'var(--text-main)', boxShadow: 'none', borderRadius: '12px', textAlign: 'center', p: 2 }}>
               <Music size={20} color="var(--primary)" style={{ marginBottom: '4px' }} />
               <Typography variant="h5" sx={{ fontWeight: 'bold' }}>{artistDetails.song_count}</Typography>
               <Typography variant="caption" sx={{ color: 'var(--text-muted)' }}>Tracks</Typography>
             </Card>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Card sx={{ bgcolor: 'var(--bg-elevated)', color: 'var(--text-main)', boxShadow: 'none', borderRadius: '12px', textAlign: 'center', p: 2 }}>
               <Disc3 size={20} color="var(--primary)" style={{ marginBottom: '4px' }} />
               <Typography variant="h5" sx={{ fontWeight: 'bold' }}>{artistDetails.album_count}</Typography>
               <Typography variant="caption" sx={{ color: 'var(--text-muted)' }}>Albums</Typography>
             </Card>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Card sx={{ bgcolor: 'var(--bg-elevated)', color: 'var(--text-main)', boxShadow: 'none', borderRadius: '12px', textAlign: 'center', p: 2 }}>
               <Calendar size={20} color="var(--primary)" style={{ marginBottom: '4px' }} />
               <Typography variant="h5" sx={{ fontWeight: 'bold', fontSize: '1rem' }}>{artistDetails.joined ? new Date(artistDetails.joined).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}</Typography>
@@ -359,7 +359,7 @@ const ArtistsPanel = ({ homeFeed, onPlayTrack, currentTrack }) => {
           ) : (
             <Grid container spacing={2}>
               {artistDetails.albums.map(album => (
-                <Grid item xs={6} sm={4} md={3} key={album.id}>
+                <Grid xs={6} sm={4} md={3} key={album.id}>
                   <Card sx={{ bgcolor: 'var(--bg-elevated)', color: 'var(--text-main)', boxShadow: 'none', borderRadius: '12px', overflow: 'hidden' }}>
                     <Box sx={{ width: '100%', paddingTop: '100%', position: 'relative', bgcolor: 'rgba(255,255,255,0.05)' }}>
                       {album.cover_url ? (
@@ -426,7 +426,7 @@ const ArtistsPanel = ({ homeFeed, onPlayTrack, currentTrack }) => {
         ) : (
           <Grid container spacing={3}>
             {artists.map(artist => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={artist.id}>
+              <Grid xs={12} sm={6} md={4} lg={3} key={artist.id}>
                 <Card 
                   sx={{ 
                     bgcolor: 'var(--bg-elevated)', 
@@ -523,7 +523,7 @@ const ArtistsPanel = ({ homeFeed, onPlayTrack, currentTrack }) => {
         ) : (
           <Grid container spacing={3}>
             {following.map(artist => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={artist.id}>
+              <Grid xs={12} sm={6} md={4} lg={3} key={artist.id}>
                 <Card 
                   sx={{ 
                     bgcolor: 'var(--bg-elevated)', 

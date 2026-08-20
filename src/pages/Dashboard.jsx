@@ -7,9 +7,9 @@ import {
   Music, LogOut, KeyRound, User as UserIcon, Home, Compass, Library, Disc3, 
   Users, ListMusic, Plus, Search, Bell, ChevronDown, Play, Heart,
   Shuffle, SkipBack, SkipForward, Repeat, Pause, Volume2, SlidersHorizontal, Edit3, Moon, Sun, CheckCircle,
-  UserPlus, ShieldCheck
+  UserPlus, ShieldCheck, Flag, Mic
 } from 'lucide-react';
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Select, MenuItem, Snackbar, Alert, CircularProgress, Box, Button, Grid, Card, CardContent, Divider, Switch, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, ThemeProvider, createTheme, Menu, Tooltip } from '@mui/material';
+import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Select, MenuItem, Snackbar, Alert, CircularProgress, Box, Button, Grid, Card, CardContent, Divider, Switch, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, ThemeProvider, createTheme, Menu, Tooltip, TextField } from '@mui/material';
 import api from '../api';
 import { LOGIN_URL, DASHBOARD_URL, PROFILE_URL, CHANGE_PASSWORD_URL } from '../routes/route_constants';
 
@@ -23,7 +23,9 @@ import ModeratorPanel from '../components/dashboard/ModeratorPanel';
 import LibraryPanel from '../components/dashboard/LibraryPanel';
 import CatalogPanel from '../components/dashboard/CatalogPanel';
 import AddModeratorPanel from '../components/dashboard/AddModeratorPanel';
+import ArtistDashboardPanel from '../components/dashboard/ArtistDashboardPanel';
 import NotificationBell from '../components/common/NotificationBell';
+import LyricsModal from '../components/common/LyricsModal';
 
 // --- Listener Panel ---
 const ListenerPanel = ({ onPlayTrack, currentTrack }) => {
@@ -31,7 +33,11 @@ const ListenerPanel = ({ onPlayTrack, currentTrack }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [likedSongIds, setLikedSongIds] = useState(new Set());
-  
+  const [reportDialog, setReportDialog] = useState({ open: false, song: null, reason: '' });
+  const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
+
+  const handleCloseToast = () => setToast(prev => ({ ...prev, open: false }));
+
   const fetchFeed = async (search = '') => {
     setLoading(true);
     try {
@@ -79,6 +85,26 @@ const ListenerPanel = ({ onPlayTrack, currentTrack }) => {
     }
   };
 
+  const handleOpenReportDialog = (e, song) => {
+    e.stopPropagation();
+    setReportDialog({ open: true, song, reason: '' });
+  };
+
+  const handleSubmitReport = async () => {
+    const { song, reason } = reportDialog;
+    if (!song || !reason.trim()) return;
+
+    try {
+      const res = await api.post('/listener/report', { songId: song.id, reason: reason.trim() });
+      if (res.data.success) {
+        setToast({ open: true, message: res.data.message || 'Report submitted to moderators.', severity: 'success' });
+        setReportDialog({ open: false, song: null, reason: '' });
+      }
+    } catch (err) {
+      setToast({ open: true, message: err.response?.data?.message || 'Failed to submit report.', severity: 'error' });
+    }
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
     fetchFeed(searchQuery);
@@ -122,7 +148,7 @@ const ListenerPanel = ({ onPlayTrack, currentTrack }) => {
                   <TableCell sx={{ fontWeight: 600, color: 'var(--text-muted)' }}>Artist</TableCell>
                   <TableCell sx={{ fontWeight: 600, color: 'var(--text-muted)' }}>Genre</TableCell>
                   <TableCell sx={{ fontWeight: 600, color: 'var(--text-muted)' }}>Album</TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: 'var(--text-muted)', width: '120px' }}></TableCell>
+                  <TableCell sx={{ fontWeight: 600, color: 'var(--text-muted)', width: '150px' }}></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -164,6 +190,14 @@ const ListenerPanel = ({ onPlayTrack, currentTrack }) => {
                       <TableCell>
                         <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end', alignItems: 'center' }}>
                           <IconButton 
+                            onClick={(e) => handleOpenReportDialog(e, song)}
+                            title="Report Song to Moderator"
+                            sx={{ color: 'var(--text-muted)', '&:hover': { color: '#ef4444' }, transition: 'color 0.2s' }}
+                            size="small"
+                          >
+                            <Flag size={16} />
+                          </IconButton>
+                          <IconButton 
                             onClick={(e) => handleToggleLike(e, song)}
                             title={isLiked ? 'Remove from Liked Songs' : 'Add to Liked Songs'}
                             sx={{ color: isLiked ? '#ef4444' : 'var(--text-muted)', '&:hover': { color: isLiked ? '#dc2626' : '#ef4444' }, transition: 'color 0.2s' }}
@@ -189,6 +223,53 @@ const ListenerPanel = ({ onPlayTrack, currentTrack }) => {
           </TableContainer>
         </div>
       )}
+
+      {/* Report Song Dialog */}
+      <Dialog 
+        open={reportDialog.open} 
+        onClose={() => setReportDialog({ open: false, song: null, reason: '' })}
+        PaperProps={{ style: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-main)', minWidth: '400px' } }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Flag size={20} color="#ef4444" />
+          Report Song: {reportDialog.song?.title}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2, color: 'var(--text-muted)' }}>
+            Please state the reason for reporting this song to the moderator team:
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            variant="outlined"
+            placeholder="E.g., Inappropriate lyrics, copyrighted audio, offensive title..."
+            value={reportDialog.reason}
+            onChange={(e) => setReportDialog(prev => ({ ...prev, reason: e.target.value }))}
+            InputProps={{ style: { color: 'var(--text-main)', backgroundColor: 'var(--bg-card)' } }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={() => setReportDialog({ open: false, song: null, reason: '' })} sx={{ color: 'var(--text-muted)' }}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmitReport} variant="contained" color="error" disabled={!reportDialog.reason.trim()}>
+            Submit Report
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Toast Notification */}
+      <Snackbar 
+        open={toast.open} 
+        autoHideDuration={4000} 
+        onClose={handleCloseToast}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseToast} severity={toast.severity} sx={{ width: '100%' }}>
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };
@@ -495,17 +576,7 @@ const ManageAdminsPanel = () => {
       </div>
     </div>
   );
-};
-
-// --- Static Data for UI ---
-const PLACEHOLDER_TRACKS = [
-  { title: 'Sunset Dreams', artist: 'Oceans', duration: '3:45', color: '#E8A0BF' },
-  { title: 'Midnight City', artist: 'Neon Lights', duration: '4:12', color: '#7C5CFC' },
-  { title: 'Bloom', artist: 'Paper Planes', duration: '3:28', color: '#F5B971' },
-  { title: 'Weightless', artist: 'Arlo Parks', duration: '3:59', color: '#C4B0FF' },
-];
-
-// --- Main Dashboard Container ---
+};// --- Main Dashboard Container ---
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -538,6 +609,12 @@ const Dashboard = () => {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [menuTrack, setMenuTrack] = useState(null);
 
+  // Report Song Dialog State (for Home view)
+  const [reportDialog, setReportDialog] = useState({ open: false, song: null, reason: '' });
+
+  // Lyrics Modal State
+  const [lyricsModalOpen, setLyricsModalOpen] = useState(false);
+
   // Hero Banner Carousel State
   const [bannerIndex, setBannerIndex] = useState(0);
 
@@ -546,7 +623,7 @@ const Dashboard = () => {
   // Fetch songs & playlists for the Home view
   useEffect(() => {
     const role = user?.role?.toLowerCase();
-    if (role === 'listener' || role === 'artist' || role === 'admin' || role === 'superadmin') {
+    if (role === 'listener' || role === 'artist' || role === 'admin' || role === 'superadmin' || role === 'moderator') {
       api.get('/listener/feed')
         .then(res => {
           const songs = res.data.feed || [];
@@ -834,7 +911,7 @@ const Dashboard = () => {
             <button className="section-see-all" onClick={() => setActiveView(user.role?.toLowerCase() || 'listener')}>See All</button>
           </div>
           <div className="tracks-grid">
-            {(filteredFeed.length > 0 ? filteredFeed.slice(0, 6) : (!searchLower ? PLACEHOLDER_TRACKS : [])).map((track, i) => (
+            {filteredFeed.slice(0, 6).map((track, i) => (
               <div key={track.id || i} className="track-card" onClick={() => track.audio_url && handlePlayTrack(track)} style={{ cursor: track.audio_url ? 'pointer' : 'default' }}>
                 <div className="track-card-art" style={{ background: track.cover_url ? 'transparent' : (track.color || `hsl(${(i * 67) % 360}, 60%, 70%)`), display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                   {track.cover_url ? (
@@ -852,6 +929,11 @@ const Dashboard = () => {
                   <div className="track-card-duration">{track.category_name || track.duration || ''}</div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
+                  {track.id && (
+                    <button className="track-card-play" title="Report Song" onClick={(e) => { e.stopPropagation(); setReportDialog({ open: true, song: track, reason: '' }); }} style={{ background: 'var(--bg-elevated)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <Flag size={14} color="var(--text-muted)" />
+                    </button>
+                  )}
                   <button className="track-card-play" title="Add to Playlist" onClick={(e) => handleAddToPlaylistClick(track, e)}>
                     <Plus size={14} fill="var(--text-main)" stroke="var(--text-main)" />
                   </button>
@@ -861,6 +943,11 @@ const Dashboard = () => {
                 </div>
               </div>
             ))}
+            {filteredFeed.length === 0 && (
+              <div style={{ color: 'var(--text-muted)', padding: '20px', gridColumn: '1 / -1' }}>
+                No songs available yet.
+              </div>
+            )}
           </div>
 
           {/* Made for You (Original Song Cards) */}
@@ -913,6 +1000,7 @@ const Dashboard = () => {
     if (activeView === 'playlists') return <PlaylistsPanel onPlayTrack={handlePlayTrack} currentTrack={currentTrack} />;
     if (activeView === 'catalog' && (role === 'admin' || role === 'superadmin')) return <CatalogPanel />;
     if (activeView === 'add_moderator' && role === 'artist') return <AddModeratorPanel />;
+    if (activeView === 'artist_dashboard' && role === 'moderator') return <ArtistDashboardPanel />;
 
     switch(role) {
       case 'superadmin':
@@ -1017,7 +1105,7 @@ const Dashboard = () => {
             </button>
           </li>
           {roleNavLabel && (
-            <li className={`sidebar-nav-item ${(activeView !== 'home' && activeView !== 'manage_admins' && activeView !== 'catalog' && activeView !== 'add_moderator' && activeView !== 'library' && activeView !== 'albums' && activeView !== 'artists' && activeView !== 'playlists') ? 'active' : ''}`}>
+            <li className={`sidebar-nav-item ${(activeView !== 'home' && activeView !== 'manage_admins' && activeView !== 'catalog' && activeView !== 'add_moderator' && activeView !== 'artist_dashboard' && activeView !== 'library' && activeView !== 'albums' && activeView !== 'artists' && activeView !== 'playlists') ? 'active' : ''}`}>
               <button onClick={() => setActiveView(user.role?.toLowerCase() || 'home')}>
                 <SlidersHorizontal size={20} /> {roleNavLabel}
               </button>
@@ -1027,6 +1115,13 @@ const Dashboard = () => {
             <li className={`sidebar-nav-item ${activeView === 'add_moderator' ? 'active' : ''}`}>
               <button onClick={() => setActiveView('add_moderator')}>
                 <UserPlus size={20} /> Add Moderator
+              </button>
+            </li>
+          )}
+          {roleLower === 'moderator' && (
+            <li className={`sidebar-nav-item ${activeView === 'artist_dashboard' ? 'active' : ''}`}>
+              <button onClick={() => setActiveView('artist_dashboard')}>
+                <Users size={20} /> Artist Dashboard
               </button>
             </li>
           )}
@@ -1119,8 +1214,13 @@ const Dashboard = () => {
       {/* ===== BOTTOM PLAYER BAR ===== */}
       {user?.role?.toLowerCase() !== 'admin' && user?.role?.toLowerCase() !== 'super admin' && user?.role?.toLowerCase() !== 'superadmin' && (
         <div className="player-bar">
-          <div className="player-track-info">
-            <div className="player-track-art" style={{ background: currentTrack?.cover_url ? 'transparent' : '#E8A0BF', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          <div 
+            className="player-track-info" 
+            onClick={() => { if (currentTrack) setLyricsModalOpen(true); }}
+            style={{ cursor: currentTrack ? 'pointer' : 'default' }}
+            title={currentTrack ? "Click to open Now Playing & Live Lyrics" : ""}
+          >
+            <div className="player-track-art" style={{ background: currentTrack?.cover_url ? 'transparent' : '#E8A0BF', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', transition: 'transform 0.2s ease' }}>
               {currentTrack?.cover_url ? (
                 <img src={`http://localhost:3001${currentTrack.cover_url}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
@@ -1128,13 +1228,17 @@ const Dashboard = () => {
               )}
             </div>
             <div>
-              <div className="player-track-name">{currentTrack?.title || 'No track selected'}</div>
+              <div className="player-track-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {currentTrack?.title || 'No track selected'}
+                {currentTrack && <span style={{ fontSize: '0.65rem', color: 'var(--primary)', padding: '1px 5px', borderRadius: '4px', background: 'rgba(124, 92, 252, 0.15)', fontWeight: 600 }}>Lyrics</span>}
+              </div>
               <div className="player-track-artist">{currentTrack?.artist_name || 'Select a song to play'}</div>
             </div>
             <Tooltip title="Save to Liked Songs" placement="top">
               <button 
                 className="player-like-btn"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   if (currentTrack) {
                     api.post('/listener/favorites', { trackId: currentTrack.id })
                       .then(() => setToast({ open: true, message: 'Added to Liked Songs!', severity: 'success' }))
@@ -1177,6 +1281,15 @@ const Dashboard = () => {
           </div>
 
           <div className="player-extra">
+            <Tooltip title="Now Playing & Synchronized Lyrics" placement="top">
+              <button 
+                className="player-btn" 
+                style={{ color: lyricsModalOpen ? 'var(--primary)' : 'inherit', display: 'flex', alignItems: 'center', gap: '4px' }}
+                onClick={() => setLyricsModalOpen(prev => !prev)}
+              >
+                <Mic size={16} />
+              </button>
+            </Tooltip>
             <div className="player-volume">
               <Tooltip title="Mute" placement="top">
                 <button className="player-btn"><Volume2 size={16} /></button>
@@ -1191,6 +1304,37 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Now Playing & Synchronized Karaoke Lyrics Modal */}
+      <LyricsModal 
+        open={lyricsModalOpen} 
+        onClose={() => setLyricsModalOpen(false)} 
+        currentTrack={currentTrack} 
+        currentTime={currentTime} 
+        duration={duration}
+        isPlaying={isPlaying}
+        onTogglePlay={handleTogglePlay}
+        onSkipBack={handleSkipBack}
+        onSkipForward={handleSkipForward}
+        onSeek={(time) => {
+          if (audioRef.current) {
+            audioRef.current.currentTime = time;
+            setCurrentTime(time);
+          }
+        }}
+        volume={volume}
+        onVolumeChange={(val) => {
+          setVolume(val);
+          if (audioRef.current) audioRef.current.volume = val;
+        }}
+        onLike={(track) => {
+          if (track) {
+            api.post('/listener/favorites', { trackId: track.id })
+              .then(() => setToast({ open: true, message: 'Added to Liked Songs!', severity: 'success' }))
+              .catch(err => setToast({ open: true, message: err.response?.data?.message || 'Error adding to favorites', severity: 'error' }));
+          }
+        }}
+      />
 
       {/* Playlist Selection Menu */}
       <Menu
@@ -1266,6 +1410,56 @@ const Dashboard = () => {
           </Button>
           <Button onClick={handlePlaylistSubmit} variant="contained" sx={{ bgcolor: 'var(--primary)', '&:hover': { bgcolor: 'var(--primary-hover)' } }}>
             Add
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Report Song Dialog (Home view) */}
+      <Dialog 
+        open={reportDialog.open} 
+        onClose={() => setReportDialog({ open: false, song: null, reason: '' })}
+        PaperProps={{ style: { backgroundColor: 'var(--bg-elevated)', color: 'var(--text-main)', minWidth: '400px' } }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Flag size={20} color="#ef4444" />
+          Report Song: {reportDialog.song?.title}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2, color: 'var(--text-muted)' }}>
+            Please state the reason for reporting this song to the moderator team:
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            variant="outlined"
+            placeholder="E.g., Inappropriate lyrics, copyrighted audio, offensive title..."
+            value={reportDialog.reason}
+            onChange={(e) => setReportDialog(prev => ({ ...prev, reason: e.target.value }))}
+            InputProps={{ style: { color: 'var(--text-main)', backgroundColor: 'var(--bg-card)' } }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={() => setReportDialog({ open: false, song: null, reason: '' })} sx={{ color: 'var(--text-muted)' }}>
+            Cancel
+          </Button>
+          <Button 
+            variant="contained" 
+            color="error" 
+            disabled={!reportDialog.reason.trim()}
+            onClick={async () => {
+              try {
+                const res = await api.post('/listener/report', { songId: reportDialog.song.id, reason: reportDialog.reason.trim() });
+                if (res.data.success) {
+                  setToast({ open: true, message: res.data.message || 'Report submitted!', severity: 'success' });
+                  setReportDialog({ open: false, song: null, reason: '' });
+                }
+              } catch (err) {
+                setToast({ open: true, message: err.response?.data?.message || 'Failed to submit report.', severity: 'error' });
+              }
+            }}
+          >
+            Submit Report
           </Button>
         </DialogActions>
       </Dialog>
