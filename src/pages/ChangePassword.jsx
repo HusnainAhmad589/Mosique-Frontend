@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { KeyRound, ArrowLeft, Eye, EyeOff, Moon, Sun } from 'lucide-react';
+import { KeyRound, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import api from '../api';
 import { DASHBOARD_URL } from '../routes/route_constants';
-import { IconButton } from '@mui/material';
 
 const ChangePassword = () => {
   const navigate = useNavigate();
@@ -13,17 +12,6 @@ const ChangePassword = () => {
   const [loading, setLoading] = useState(false);
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [darkMode]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,17 +37,10 @@ const ChangePassword = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ marginBottom: '20px' }}>
           <Link to={DASHBOARD_URL} className="link" style={{ display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none', color: 'var(--text-muted)' }}>
             <ArrowLeft size={16} /> Back to Dashboard
           </Link>
-          <IconButton 
-            onClick={() => setDarkMode(!darkMode)} 
-            sx={{ color: 'var(--text-secondary)' }}
-            title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-          >
-            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-          </IconButton>
         </div>
 
         <div className="auth-header">
@@ -98,7 +79,7 @@ const ChangePassword = () => {
               <input
                 type={showNewPassword ? "text" : "password"}
                 className="form-control"
-                placeholder="min 4 characters"
+                placeholder="Enter new password (min 6 chars)"
                 required
                 value={formData.new_password}
                 onChange={(e) => setFormData({ ...formData, new_password: e.target.value })}

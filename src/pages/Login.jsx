@@ -1,9 +1,8 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogIn, Eye, EyeOff, Moon, Sun } from 'lucide-react';
+import { LogIn, Eye, EyeOff } from 'lucide-react';
 import { DASHBOARD_URL, FORGOT_PASSWORD_URL, ROLE_SELECTION_URL, CHANGE_PASSWORD_URL } from '../routes/route_constants';
-import { IconButton } from '@mui/material';
 import { useDispatch } from 'react-redux';
 import { showToast } from '../store/slices/notificationSlice';
 
@@ -15,17 +14,6 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [darkMode]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,20 +38,6 @@ const Login = () => {
 
   return (
     <div className="auth-container">
-      <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }}>
-        <IconButton 
-          onClick={() => setDarkMode(!darkMode)} 
-          sx={{ 
-            color: 'var(--text-main)', 
-            bgcolor: 'var(--bg-card)', 
-            boxShadow: 'var(--shadow-md)',
-            '&:hover': { bgcolor: 'var(--bg-elevated)' } 
-          }}
-          title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-        >
-          {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-        </IconButton>
-      </div>
       <div className="auth-card">
         <div className="auth-header">
           <h1><LogIn size={32} color="var(--primary)" /> Log in to Mosique</h1>

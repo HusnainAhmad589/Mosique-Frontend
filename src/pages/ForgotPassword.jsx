@@ -1,26 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { KeyRound, Moon, Sun } from 'lucide-react';
+import { KeyRound } from 'lucide-react';
 import api from '../api';
 import { LOGIN_URL } from '../routes/route_constants';
-import { IconButton } from '@mui/material';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [darkMode]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,20 +28,6 @@ const ForgotPassword = () => {
 
   return (
     <div className="auth-container">
-      <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }}>
-        <IconButton 
-          onClick={() => setDarkMode(!darkMode)} 
-          sx={{ 
-            color: 'var(--text-main)', 
-            bgcolor: 'var(--bg-card)', 
-            boxShadow: 'var(--shadow-md)',
-            '&:hover': { bgcolor: 'var(--bg-elevated)' } 
-          }}
-          title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-        >
-          {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-        </IconButton>
-      </div>
       <div className="auth-card">
         <div className="auth-header">
           <h1><KeyRound size={32} color="var(--primary)" /> Forgot Password</h1>
