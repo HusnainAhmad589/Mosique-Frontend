@@ -140,7 +140,7 @@ const LibraryPanel = ({ onPlayTrack, currentTrack }) => {
         ) : (
           <Grid container spacing={3}>
             {savedAlbums.map((album) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={album.id}>
+              <Grid xs={12} sm={6} md={4} lg={3} key={album.id}>
                 <Card sx={{ bgcolor: 'var(--bg-elevated)', backgroundImage: 'none', height: '100%' }}>
                   <Box sx={{ 
                     width: '100%', 

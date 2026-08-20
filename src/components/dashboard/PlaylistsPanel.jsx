@@ -187,7 +187,7 @@ const PlaylistsPanel = ({ onPlayTrack, currentTrack }) => {
       ) : (
         <Grid container spacing={3}>
           {playlists.map(playlist => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={playlist.id}>
+            <Grid xs={12} sm={6} md={4} lg={3} key={playlist.id}>
               <Card 
                 onClick={() => handlePlaylistClick(playlist)}
                 sx={{ 

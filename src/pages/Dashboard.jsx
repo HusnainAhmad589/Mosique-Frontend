@@ -1214,8 +1214,13 @@ const Dashboard = () => {
       {/* ===== BOTTOM PLAYER BAR ===== */}
       {user?.role?.toLowerCase() !== 'admin' && user?.role?.toLowerCase() !== 'super admin' && user?.role?.toLowerCase() !== 'superadmin' && (
         <div className="player-bar">
-          <div className="player-track-info">
-            <div className="player-track-art" style={{ background: currentTrack?.cover_url ? 'transparent' : '#E8A0BF', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          <div 
+            className="player-track-info" 
+            onClick={() => { if (currentTrack) setLyricsModalOpen(true); }}
+            style={{ cursor: currentTrack ? 'pointer' : 'default' }}
+            title={currentTrack ? "Click to open Now Playing & Live Lyrics" : ""}
+          >
+            <div className="player-track-art" style={{ background: currentTrack?.cover_url ? 'transparent' : '#E8A0BF', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', transition: 'transform 0.2s ease' }}>
               {currentTrack?.cover_url ? (
                 <img src={`http://localhost:3001${currentTrack.cover_url}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
@@ -1223,13 +1228,17 @@ const Dashboard = () => {
               )}
             </div>
             <div>
-              <div className="player-track-name">{currentTrack?.title || 'No track selected'}</div>
+              <div className="player-track-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {currentTrack?.title || 'No track selected'}
+                {currentTrack && <span style={{ fontSize: '0.65rem', color: 'var(--primary)', padding: '1px 5px', borderRadius: '4px', background: 'rgba(124, 92, 252, 0.15)', fontWeight: 600 }}>Lyrics</span>}
+              </div>
               <div className="player-track-artist">{currentTrack?.artist_name || 'Select a song to play'}</div>
             </div>
             <Tooltip title="Save to Liked Songs" placement="top">
               <button 
                 className="player-like-btn"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   if (currentTrack) {
                     api.post('/listener/favorites', { trackId: currentTrack.id })
                       .then(() => setToast({ open: true, message: 'Added to Liked Songs!', severity: 'success' }))
@@ -1272,10 +1281,10 @@ const Dashboard = () => {
           </div>
 
           <div className="player-extra">
-            <Tooltip title="View Synchronized Lyrics" placement="top">
+            <Tooltip title="Now Playing & Synchronized Lyrics" placement="top">
               <button 
                 className="player-btn" 
-                style={{ color: lyricsModalOpen ? 'var(--primary)' : 'inherit' }}
+                style={{ color: lyricsModalOpen ? 'var(--primary)' : 'inherit', display: 'flex', alignItems: 'center', gap: '4px' }}
                 onClick={() => setLyricsModalOpen(prev => !prev)}
               >
                 <Mic size={16} />
@@ -1296,12 +1305,35 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Synchronized Karaoke Lyrics Modal */}
+      {/* Now Playing & Synchronized Karaoke Lyrics Modal */}
       <LyricsModal 
         open={lyricsModalOpen} 
         onClose={() => setLyricsModalOpen(false)} 
         currentTrack={currentTrack} 
         currentTime={currentTime} 
+        duration={duration}
+        isPlaying={isPlaying}
+        onTogglePlay={handleTogglePlay}
+        onSkipBack={handleSkipBack}
+        onSkipForward={handleSkipForward}
+        onSeek={(time) => {
+          if (audioRef.current) {
+            audioRef.current.currentTime = time;
+            setCurrentTime(time);
+          }
+        }}
+        volume={volume}
+        onVolumeChange={(val) => {
+          setVolume(val);
+          if (audioRef.current) audioRef.current.volume = val;
+        }}
+        onLike={(track) => {
+          if (track) {
+            api.post('/listener/favorites', { trackId: track.id })
+              .then(() => setToast({ open: true, message: 'Added to Liked Songs!', severity: 'success' }))
+              .catch(err => setToast({ open: true, message: err.response?.data?.message || 'Error adding to favorites', severity: 'error' }));
+          }
+        }}
       />
 
       {/* Playlist Selection Menu */}

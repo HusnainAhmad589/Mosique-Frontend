@@ -406,7 +406,7 @@ const ArtistPanel = () => {
         {/* --- OVERVIEW TAB --- */}
         <TabPanel value={tabIndex} index={0}>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
+            <Grid xs={12} md={4}>
               <Card sx={{ bgcolor: 'var(--bg-elevated)', color: 'var(--text-main)', boxShadow: 'none' }}>
                 <CardContent>
                   <Typography color="var(--text-muted)" gutterBottom>Total Albums</Typography>
@@ -414,7 +414,7 @@ const ArtistPanel = () => {
                 </CardContent>
               </Card>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid xs={12} md={4}>
               <Card sx={{ bgcolor: 'var(--bg-elevated)', color: 'var(--text-main)', boxShadow: 'none' }}>
                 <CardContent>
                   <Typography color="var(--text-muted)" gutterBottom>Total Tracks</Typography>
@@ -500,7 +500,7 @@ const ArtistPanel = () => {
           </Dialog>
           <Grid container spacing={2}>
             {albums.map(album => (
-              <Grid item xs={12} sm={6} md={4} key={album.id}>
+              <Grid xs={12} sm={6} md={4} key={album.id}>
                 <Card sx={{ bgcolor: 'var(--bg-elevated)', color: 'var(--text-main)', display: 'flex', flexDirection: 'column', height: '100%' }}>
                   <Box sx={{ position: 'relative' }}>
                     {album.cover_url ? (

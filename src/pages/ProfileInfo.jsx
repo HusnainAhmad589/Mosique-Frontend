@@ -1,10 +1,10 @@
 import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { User as UserIcon, ArrowLeft, Edit3, X, Check, AlertTriangle, Trash2 } from 'lucide-react';
+import { User as UserIcon, ArrowLeft, Edit3, X, Check, AlertTriangle, Trash2, Moon, Sun } from 'lucide-react';
 import api from '../api';
 import { DASHBOARD_URL, LOGIN_URL } from '../routes/route_constants';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, IconButton } from '@mui/material';
 import { useDispatch } from 'react-redux';
 import { showToast } from '../store/slices/notificationSlice';
 
@@ -13,11 +13,22 @@ const ProfileInfo = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
   
   const [formData, setFormData] = useState({
     display_name: '',
@@ -130,15 +141,20 @@ const ProfileInfo = () => {
   return (
     <div className="auth-container" style={{ padding: '40px 20px', minHeight: '100vh', display: 'flex', alignItems: 'flex-start' }}>
       <div className="auth-card" style={{ maxWidth: '700px', width: '100%' }}>
-        <div style={{marginBottom: '20px', display: 'flex', justifyContent: 'space-between'}}>
+        <div style={{marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
           <Link to={DASHBOARD_URL} className="link" style={{display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none', color: 'var(--text-muted)'}}>
             <ArrowLeft size={16} /> Back to Dashboard
           </Link>
-          {!isEditing && (
-            <button className="btn btn-outline" onClick={() => setIsEditing(true)} style={{ padding: '6px 14px', fontSize: '13px', display: 'flex', gap: '5px', alignItems: 'center', width: 'auto' }}>
-              <Edit3 size={14} /> Edit Profile
-            </button>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <IconButton onClick={() => setDarkMode(!darkMode)} sx={{ color: 'var(--text-secondary)' }} title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}>
+              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </IconButton>
+            {!isEditing && (
+              <button className="btn btn-outline" onClick={() => setIsEditing(true)} style={{ padding: '6px 14px', fontSize: '13px', display: 'flex', gap: '5px', alignItems: 'center', width: 'auto' }}>
+                <Edit3 size={14} /> Edit Profile
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="auth-header">
