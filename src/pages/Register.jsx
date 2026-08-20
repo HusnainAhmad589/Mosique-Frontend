@@ -1,9 +1,8 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { UserPlus, Eye, EyeOff, Moon, Sun } from 'lucide-react';
+import { UserPlus, Eye, EyeOff } from 'lucide-react';
 import { DASHBOARD_URL, LOGIN_URL } from '../routes/route_constants';
-import { IconButton } from '@mui/material';
 import { useDispatch } from 'react-redux';
 import { showToast } from '../store/slices/notificationSlice';
 
@@ -13,17 +12,6 @@ const Register = () => {
   const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
   const initialRole = searchParams.get('role') || 'listener';
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [darkMode]);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -61,20 +49,6 @@ const Register = () => {
 
   return (
     <div className="auth-container">
-      <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }}>
-        <IconButton 
-          onClick={() => setDarkMode(!darkMode)} 
-          sx={{ 
-            color: 'var(--text-main)', 
-            bgcolor: 'var(--bg-card)', 
-            boxShadow: 'var(--shadow-md)',
-            '&:hover': { bgcolor: 'var(--bg-elevated)' } 
-          }}
-          title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-        >
-          {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-        </IconButton>
-      </div>
       <div className="auth-card" style={{ maxWidth: '500px' }}>
         <div className="auth-header">
           <h1><UserPlus size={32} color="var(--primary)" /> Join Mosique</h1>
@@ -89,7 +63,7 @@ const Register = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. mozart123"
+              placeholder="Pick a unique username"
               required
               value={formData.username}
               onChange={(e) => setFormData({ ...formData, username: e.target.value })}
@@ -97,34 +71,22 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label>What should we call you?</label>
+            <label>Display Name</label>
             <input
               type="text"
               className="form-control"
-              placeholder="Display Name"
-              required
+              placeholder="Your public name (e.g. John Doe)"
               value={formData.display_name}
               onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
             />
           </div>
 
           <div className="form-group">
-            <label>Address (Optional)</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Your physical address"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Email address</label>
+            <label>Email Address</label>
             <input
               type="email"
               className="form-control"
-              placeholder="name@domain.com"
+              placeholder="you@example.com"
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -132,18 +94,18 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label>Create a password</label>
+            <label>Password</label>
             <div className="password-wrapper">
               <input
                 type={showPassword ? "text" : "password"}
                 className="form-control"
-                placeholder="min 4 chars"
+                placeholder="At least 6 characters"
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
-              <button
-                type="button"
+              <button 
+                type="button" 
                 className="password-toggle-btn"
                 onClick={() => setShowPassword(!showPassword)}
               >
@@ -153,24 +115,23 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label>How will you use Mosique?</label>
-            <select
+            <label>Address / Location</label>
+            <input
+              type="text"
               className="form-control"
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-            >
-              <option value="listener">I want to listen to music (Listener)</option>
-              <option value="artist">I want to upload music (Artist)</option>
-            </select>
+              placeholder="City, Country"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            />
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ marginTop: '10px' }} disabled={loading}>
-            {loading ? 'Creating account...' : 'Sign Up'}
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
 
         <div className="auth-footer">
-          Already have an account? <Link to={LOGIN_URL}>Log in here</Link>
+          Already have an account? <Link to={LOGIN_URL}>Log in</Link>
         </div>
       </div>
     </div>
