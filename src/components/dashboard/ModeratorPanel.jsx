@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { Trash2, Edit3, CheckCircle, XCircle, AlertTriangle, Play, Pause } from 'lucide-react';
 import { fetchReports, resolveReport, fetchPendingContent, reviewContent, removeSong, updateSong, clearModeratorMessages } from '../../store/slices/moderatorSlice';
+import { getMediaUrl } from '../../api';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -50,7 +51,7 @@ const ModeratorPanel = () => {
 
   const handlePlayToggle = (audioUrl, songId) => {
     if (!audioUrl) return;
-    const fullUrl = audioUrl.startsWith('http') ? audioUrl : `http://localhost:3001${audioUrl}`;
+    const fullUrl = getMediaUrl(audioUrl);
 
     if (playingSongId === songId && audioObj) {
       if (audioObj.paused) {

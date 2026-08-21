@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import { Play, Music, ArrowLeft, ListMusic, Trash2 } from 'lucide-react';
 
-import api from '../../api';
+import api, { getMediaUrl } from '../../api';
 
 const PlaylistsPanel = ({ onPlayTrack, currentTrack }) => {
   const [playlists, setPlaylists] = useState([]);
@@ -151,7 +151,7 @@ const PlaylistsPanel = ({ onPlayTrack, currentTrack }) => {
                       <TableCell sx={{ color: isPlaying ? 'var(--primary)' : 'var(--text-main)' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           {track.cover_url ? (
-                            <img src={`http://localhost:3001${track.cover_url}`} alt="" style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover' }} />
+                            <img src={getMediaUrl(track.cover_url)} alt="" style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover' }} />
                           ) : (
                             <Box sx={{ width: 40, height: 40, borderRadius: 1, bgcolor: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <Music size={20} color="var(--text-muted)" />
@@ -211,7 +211,7 @@ const PlaylistsPanel = ({ onPlayTrack, currentTrack }) => {
                 }}>
                   {playlist.songs && playlist.songs.length > 0 && playlist.songs[0].cover_url ? (
                     <img 
-                      src={`http://localhost:3001${playlist.songs[0].cover_url}`} 
+                      src={getMediaUrl(playlist.songs[0].cover_url)} 
                       alt="" 
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                     />

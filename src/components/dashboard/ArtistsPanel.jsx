@@ -5,7 +5,7 @@ import {
   Tabs, Tab, Snackbar, Alert, CircularProgress, Chip, Divider
 } from '@mui/material';
 import { User, Music, ArrowLeft, Play, UserPlus, UserMinus, CheckCircle, Calendar, Users, Disc3, ExternalLink } from 'lucide-react';
-import api from '../../api';
+import api, { getMediaUrl } from '../../api';
 
 // A simple TabPanel component
 function TabPanel(props) {
@@ -128,7 +128,7 @@ const ArtistsPanel = ({ homeFeed, onPlayTrack, currentTrack }) => {
         {artistDetails.banner_url && (
           <Box sx={{ 
             width: '100%', height: '200px', borderRadius: '16px', overflow: 'hidden', mb: 3,
-            background: `url(http://localhost:3001${artistDetails.banner_url}) center/cover no-repeat`
+            background: `url(${getMediaUrl(artistDetails.banner_url)}) center/cover no-repeat`
           }} />
         )}
 
@@ -153,7 +153,7 @@ const ArtistsPanel = ({ homeFeed, onPlayTrack, currentTrack }) => {
               boxShadow: '0 4px 20px rgba(124, 92, 252, 0.3)'
             }}>
               {artistDetails.avatar_url ? (
-                <img src={artistDetails.avatar_url.startsWith('http') ? artistDetails.avatar_url : `http://localhost:3001${artistDetails.avatar_url}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={getMediaUrl(artistDetails.avatar_url)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <User size={40} color="var(--text-muted)" />
               )}
@@ -323,7 +323,7 @@ const ArtistsPanel = ({ homeFeed, onPlayTrack, currentTrack }) => {
                         <TableCell sx={{ color: isPlaying ? 'var(--primary)' : 'var(--text-main)' }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                             {track.cover_url ? (
-                              <img src={`http://localhost:3001${track.cover_url}`} alt="" style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover' }} />
+                              <img src={getMediaUrl(track.cover_url)} alt="" style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover' }} />
                             ) : (
                               <Box sx={{ width: 40, height: 40, borderRadius: 1, bgcolor: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <Music size={20} color="var(--text-muted)" />
@@ -363,7 +363,7 @@ const ArtistsPanel = ({ homeFeed, onPlayTrack, currentTrack }) => {
                   <Card sx={{ bgcolor: 'var(--bg-elevated)', color: 'var(--text-main)', boxShadow: 'none', borderRadius: '12px', overflow: 'hidden' }}>
                     <Box sx={{ width: '100%', paddingTop: '100%', position: 'relative', bgcolor: 'rgba(255,255,255,0.05)' }}>
                       {album.cover_url ? (
-                        <img src={`http://localhost:3001${album.cover_url}`} alt="" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={getMediaUrl(album.cover_url)} alt="" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Disc3 size={40} color="var(--text-muted)" />
@@ -456,7 +456,7 @@ const ArtistsPanel = ({ homeFeed, onPlayTrack, currentTrack }) => {
                     boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
                   }}>
                     {artist.profilePicture ? (
-                      <img src={artist.profilePicture.startsWith('http') ? artist.profilePicture : `http://localhost:3001${artist.profilePicture}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={getMediaUrl(artist.profilePicture)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
                       <User size={56} color="var(--text-muted)" opacity={0.5} />
                     )}
@@ -552,7 +552,7 @@ const ArtistsPanel = ({ homeFeed, onPlayTrack, currentTrack }) => {
                     boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
                   }}>
                     {artist.profilePicture ? (
-                      <img src={artist.profilePicture.startsWith('http') ? artist.profilePicture : `http://localhost:3001${artist.profilePicture}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={getMediaUrl(artist.profilePicture)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
                       <User size={56} color="var(--text-muted)" opacity={0.5} />
                     )}

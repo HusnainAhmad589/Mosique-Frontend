@@ -13,7 +13,7 @@ import {
   fetchSongs, publishSong, deleteSong, fetchCategories, clearMessages,
   updateAlbumStatus, deleteAlbum, updateSongStatus, generateLyrics, updateSongLyrics
 } from '../../store/slices/artistSlice';
-import api from '../../api';
+import api, { getMediaUrl } from '../../api';
 
 // A simple TabPanel component
 function TabPanel(props) {
@@ -438,7 +438,7 @@ const ArtistPanel = () => {
               <Box sx={{ flex: 1 }}>
                 <Box sx={{ border: '2px dashed var(--border)', borderRadius: '8px', p: 3, textAlign: 'center' }}>
                   {profile?.banner_url ? (
-                    <img src={`http://localhost:3001${profile.banner_url}`} alt="Banner" style={{ width: '100%', borderRadius: '8px', marginBottom: '16px' }} />
+                    <img src={getMediaUrl(profile.banner_url)} alt="Banner" style={{ width: '100%', borderRadius: '8px', marginBottom: '16px' }} />
                   ) : (
                     <ImageIcon size={48} color="var(--text-muted)" style={{ marginBottom: '16px' }} />
                   )}
@@ -504,7 +504,7 @@ const ArtistPanel = () => {
                 <Card sx={{ bgcolor: 'var(--bg-elevated)', color: 'var(--text-main)', display: 'flex', flexDirection: 'column', height: '100%' }}>
                   <Box sx={{ position: 'relative' }}>
                     {album.cover_url ? (
-                      <img src={`http://localhost:3001${album.cover_url}`} alt={album.title} style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
+                      <img src={getMediaUrl(album.cover_url)} alt={album.title} style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
                     ) : (
                       <Box sx={{ width: '100%', height: '200px', bgcolor: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Typography color="var(--text-muted)">No Cover</Typography>
@@ -801,7 +801,7 @@ const ArtistPanel = () => {
                     </TableCell>
                     <TableCell>
                       {song.audio_url && (
-                        <audio controls src={`http://localhost:3001${song.audio_url}`} style={{ height: '32px' }} />
+                        <audio controls src={getMediaUrl(song.audio_url)} style={{ height: '32px' }} />
                       )}
                     </TableCell>
                     <TableCell>
