@@ -9,7 +9,7 @@ import {
   IconButton 
 } from '@mui/material';
 import { Play, Music, ArrowLeft, Disc3 } from 'lucide-react';
-import api from '../../api';
+import api, { getMediaUrl } from '../../api';
 
 const AlbumsPanel = ({ onPlayTrack, currentTrack }) => {
   const [albums, setAlbums] = useState([]);
@@ -103,7 +103,7 @@ const AlbumsPanel = ({ onPlayTrack, currentTrack }) => {
           }}>
             {selectedAlbum.cover_url ? (
               <img 
-                src={`http://localhost:3001${selectedAlbum.cover_url}`} 
+                src={getMediaUrl(selectedAlbum.cover_url)} 
                 alt={selectedAlbum.title} 
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
               />
@@ -255,7 +255,7 @@ const AlbumsPanel = ({ onPlayTrack, currentTrack }) => {
                 marginBottom: '4px'
               }}>
                 {album.cover_url ? (
-                  <img src={`http://localhost:3001${album.cover_url}`} alt={album.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={getMediaUrl(album.cover_url)} alt={album.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <Disc3 size={48} color="var(--text-muted)" opacity={0.5} />
                 )}

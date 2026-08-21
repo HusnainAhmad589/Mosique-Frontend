@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import { CheckCircle, Music, Disc3, Users, Globe, Info, Play, Pause, Edit3, Trash2 } from 'lucide-react';
 import { fetchArtistsDashboard, updateSong, removeSong, clearModeratorMessages } from '../../store/slices/moderatorSlice';
+import { getMediaUrl } from '../../api';
 
 const ArtistDashboardPanel = () => {
   const dispatch = useDispatch();
@@ -36,7 +37,7 @@ const ArtistDashboardPanel = () => {
 
   const handlePlayToggle = (song) => {
     if (!song.audio_url) return;
-    const fullUrl = song.audio_url.startsWith('http') ? song.audio_url : `http://localhost:3001${song.audio_url}`;
+    const fullUrl = getMediaUrl(song.audio_url);
 
     if (playingSongId === song.id && audioObj) {
       if (audioObj.paused) {
@@ -131,7 +132,7 @@ const ArtistDashboardPanel = () => {
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <Avatar 
-                      src={artist.avatar_url ? (artist.avatar_url.startsWith('http') ? artist.avatar_url : `http://localhost:3001${artist.avatar_url}`) : undefined}
+                      src={artist.avatar_url ? getMediaUrl(artist.avatar_url) : undefined}
                       sx={{ bgcolor: 'var(--primary)', width: 36, height: 36 }}
                     >
                       {artist.display_name?.[0] || artist.username?.[0]}
@@ -224,7 +225,7 @@ const ArtistDashboardPanel = () => {
               {/* Profile Header */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                 <Avatar 
-                  src={selectedArtist.avatar_url ? (selectedArtist.avatar_url.startsWith('http') ? selectedArtist.avatar_url : `http://localhost:3001${selectedArtist.avatar_url}`) : undefined}
+                  src={selectedArtist.avatar_url ? getMediaUrl(selectedArtist.avatar_url) : undefined}
                   sx={{ bgcolor: 'var(--primary)', width: 64, height: 64 }}
                 >
                   {selectedArtist.display_name?.[0] || selectedArtist.username?.[0]}

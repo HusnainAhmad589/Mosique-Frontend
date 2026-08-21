@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { Play, Heart, Trash2, Disc, Clock } from 'lucide-react';
 import { fetchFavorites, removeFavorite, fetchSavedAlbums, removeSavedAlbum, fetchHistory, clearLibraryMessages } from '../../store/slices/librarySlice';
+import { getMediaUrl } from '../../api';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -103,7 +104,7 @@ const LibraryPanel = ({ onPlayTrack, currentTrack }) => {
                       <TableCell sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <div className="table-cover">
                           {song.cover_url ? (
-                            <img src={`http://localhost:3001${song.cover_url}`} alt={song.title} />
+                            <img src={getMediaUrl(song.cover_url)} alt={song.title} />
                           ) : (
                             <div className="table-cover-fallback"><Disc size={20} /></div>
                           )}
@@ -153,7 +154,7 @@ const LibraryPanel = ({ onPlayTrack, currentTrack }) => {
                     position: 'relative'
                   }}>
                     {album.cover_url ? (
-                      <img src={`http://localhost:3001${album.cover_url}`} alt={album.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={getMediaUrl(album.cover_url)} alt={album.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
                       <Disc size={64} color="var(--text-muted)" opacity={0.5} />
                     )}
@@ -212,7 +213,7 @@ const LibraryPanel = ({ onPlayTrack, currentTrack }) => {
                       <TableCell sx={{ display: 'flex', alignItems: 'center', gap: 2 }}> 
                         <div className="table-cover">
                           {song.cover_url ? (
-                            <img src={`http://localhost:3001${song.cover_url}`} alt={song.title} />
+                            <img src={getMediaUrl(song.cover_url)} alt={song.title} />
                           ) : (
                             <div className="table-cover-fallback"><Disc size={20} /></div>
                           )}

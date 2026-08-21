@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// Get base backend URL from Vite environment variable (default to localhost in dev)
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
+
 const api = axios.create({
-  baseURL: 'http://localhost:3001/api',
+  baseURL: `${API_BASE_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -19,4 +22,18 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+/**
+ * Resolves static media URLs (covers, avatars, banners, audio files).
+ * Handles both absolute URLs (http:// or https://) and relative backend static paths (/uploads/...).
+ */
+export const getMediaUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${API_BASE_URL}${cleanPath}`;
+};
+
 export default api;
+

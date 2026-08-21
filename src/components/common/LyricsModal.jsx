@@ -4,7 +4,7 @@ import {
   X, Mic, Music, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, 
   Volume2, VolumeX, Heart, ChevronDown, Sparkles 
 } from 'lucide-react';
-import api from '../../api';
+import api, { getMediaUrl } from '../../api';
 
 const LyricsModal = ({ 
   open, 
@@ -151,7 +151,7 @@ const LyricsModal = ({
   if (!currentTrack) return null;
 
   const artistName = currentTrack.Artist?.display_name || currentTrack.Artist?.username || currentTrack.artist_name || 'Unknown Artist';
-  const coverUrl = currentTrack.cover_url ? (currentTrack.cover_url.startsWith('http') ? currentTrack.cover_url : `http://localhost:3001${currentTrack.cover_url}`) : null;
+  const coverUrl = getMediaUrl(currentTrack.cover_url);
   const albumTitle = currentTrack.Album?.title || currentTrack.album_title || null;
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 

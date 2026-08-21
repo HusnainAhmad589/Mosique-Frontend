@@ -10,7 +10,7 @@ import {
   UserPlus, ShieldCheck, Flag, Mic
 } from 'lucide-react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Select, MenuItem, Snackbar, Alert, CircularProgress, Box, Button, Grid, Card, CardContent, Divider, Switch, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, ThemeProvider, createTheme, Menu, Tooltip, TextField } from '@mui/material';
-import api from '../api';
+import api, { getMediaUrl } from '../api';
 import { LOGIN_URL, DASHBOARD_URL, PROFILE_URL, CHANGE_PASSWORD_URL } from '../routes/route_constants';
 
 import SuperAdminPanel from '../components/dashboard/SuperAdminPanel';
@@ -167,7 +167,7 @@ const ListenerPanel = ({ onPlayTrack, currentTrack }) => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <div style={{ width: '40px', height: '40px', borderRadius: '6px', background: song.cover_url ? 'transparent' : `hsl(${(song.id * 47) % 360}, 60%, 70%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                             {song.cover_url ? (
-                              <img src={`http://localhost:3001${song.cover_url}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <img src={getMediaUrl(song.cover_url)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : (
                               <Music size={16} color="white" />
                             )}
@@ -691,7 +691,7 @@ const Dashboard = () => {
     }
     // New track
     playTrackedRef.current = false;
-    audio.src = `http://localhost:3001${song.audio_url}`;
+    audio.src = getMediaUrl(song.audio_url);
     audio.volume = volume;
     audio.play();
     setCurrentTrack(song);
@@ -858,7 +858,7 @@ const Dashboard = () => {
           {/* Hero Banner */}
           {bannerItem ? (
             <div className="hero-banner" style={{
-              backgroundImage: bannerItem.cover_url ? `linear-gradient(to right, rgba(124, 92, 252, 0.9), rgba(124, 92, 252, 0.6)), url(http://localhost:3001${bannerItem.cover_url})` : undefined,
+              backgroundImage: bannerItem.cover_url ? `linear-gradient(to right, rgba(124, 92, 252, 0.9), rgba(124, 92, 252, 0.6)), url(${getMediaUrl(bannerItem.cover_url)})` : undefined,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               transition: 'background-image 0.5s ease-in-out'
@@ -873,7 +873,7 @@ const Dashboard = () => {
               </div>
               <div className="hero-decoration">
                 {bannerItem.cover_url ? (
-                  <img src={`http://localhost:3001${bannerItem.cover_url}`} alt="Cover" style={{ width: '120px', height: '120px', borderRadius: '8px', boxShadow: '0 8px 16px rgba(0,0,0,0.2)' }} />
+                  <img src={getMediaUrl(bannerItem.cover_url)} alt="Cover" style={{ width: '120px', height: '120px', borderRadius: '8px', boxShadow: '0 8px 16px rgba(0,0,0,0.2)' }} />
                 ) : (
                   <div style={{ width: '80px', height: '80px', background: 'rgba(255,255,255,0.3)', borderRadius: '20px', transform: 'rotate(15deg)' }} />
                 )}
@@ -915,7 +915,7 @@ const Dashboard = () => {
               <div key={track.id || i} className="track-card" onClick={() => track.audio_url && handlePlayTrack(track)} style={{ cursor: track.audio_url ? 'pointer' : 'default' }}>
                 <div className="track-card-art" style={{ background: track.cover_url ? 'transparent' : (track.color || `hsl(${(i * 67) % 360}, 60%, 70%)`), display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                   {track.cover_url ? (
-                    <img src={`http://localhost:3001${track.cover_url}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={getMediaUrl(track.cover_url)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     <Music size={20} color="white" />
                   )}
@@ -958,7 +958,7 @@ const Dashboard = () => {
           <div className="mix-grid">
             {filteredFeed.slice(0, 4).map((track, i) => (
               <div key={track.id || i} className="mix-card" onClick={() => track.audio_url && handlePlayTrack(track)} style={{ cursor: track.audio_url ? 'pointer' : 'default' }}>
-                <div className="mix-card-gradient" style={{ background: track.cover_url ? `url(http://localhost:3001${track.cover_url}) center/cover` : `hsl(${(i * 87) % 360}, 60%, 70%)` }}>
+                <div className="mix-card-gradient" style={{ background: track.cover_url ? `url(${getMediaUrl(track.cover_url)}) center/cover` : `hsl(${(i * 87) % 360}, 60%, 70%)` }}>
                   {!track.cover_url && <Music size={40} color="rgba(255,255,255,0.6)" />}
                 </div>
                 <div className="mix-card-body">
@@ -1222,7 +1222,7 @@ const Dashboard = () => {
           >
             <div className="player-track-art" style={{ background: currentTrack?.cover_url ? 'transparent' : '#E8A0BF', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', transition: 'transform 0.2s ease' }}>
               {currentTrack?.cover_url ? (
-                <img src={`http://localhost:3001${currentTrack.cover_url}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={getMediaUrl(currentTrack.cover_url)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <Music size={20} color="white" />
               )}
